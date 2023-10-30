@@ -105,11 +105,10 @@ vignettes/*.pdf
 #####################
 Mathematica/*
 notes/*
-output/*
+out/*
 papers/*
 doc/*
 SexGenMtg/*
 Cpp/*
-R/*-IBM*
 # Untracked Files for public repo #
 ###################################

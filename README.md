@@ -1,8 +1,8 @@
-# Using Fisher's Geometric Model study balancing selection in partially selfing populations 
+# Insights from Fisher's Geometric Model into the scope for balancing selection in inbreeding populations 
 
 ## Overview
 
-This is a GitHub repository for the development of a theoretical population genetics research project that is now published under the title "*Using Fisher's Geometric Model study balancing selection in partially selfing populations*" (doi: 10.XXXX/evo.XXXX). Here you can find all of the necessary code to reproduce the simulations and main figures presented in the published paper and appendices. 
+This is a GitHub repository for the development of a theoretical population genetics research project with the working title "*Insights from Fisher's Geometric Model into the scope for balancing selection in inbreeding populations*" (doi: 10.XXXX/evo.XXXX). Here you can find all of the necessary code to reproduce the simulations and main figures presented in the published paper and appendices. 
 
 
 ## Abstract
@@ -14,7 +14,7 @@ Blah, Blah, Blah.
 ## Citing information
 *Please cite the paper as*:
 
-Olito, C. and T. Connallon. 2023. Using Fisher's Geometric Model study balancing selection in partially selfing populations. *Evolution* XX: XX--XX. doi: 10.XXXX/evo.XXXXX.
+Olito, C. and T. Connallon. 202X. Using Fisher's Geometric Model study balancing selection in partially selfing populations. *Evolution* XX: XX--XX. doi: 10.XXXX/evo.XXXXX.
 
 The published article, along with all supplementary material, is Open Access and [freely available through the publisher](https://XXXXXX). You can also contact me directly if you would like a copy. 
 
