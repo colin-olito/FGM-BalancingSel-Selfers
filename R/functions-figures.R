@@ -15,13 +15,13 @@ toPdf <- function(expr, filename, ...) {
 }
 
 figPath  <-  function(name) {
-  file.path('./figures', name)
+  file.path('./figs', name)
 }
 
 toDev <- function(expr, dev, filename, ..., verbose=TRUE) {
   if ( verbose )
     cat(sprintf('Creating %s\n', filename))
-    dev(filename, family='CM Roman', ...)
+    dev(filename, family="Times New Roman", ...)
 #    dev(filename, family='Arial', ...)
     on.exit(dev.off())
     eval.parent(substitute(expr))
@@ -147,5 +147,337 @@ fibonacci.scale  <-  function(n) {
         fibs  <-  c(fibs, (fibs[i] + fibs[i-1]))
     }
     (fibs/max(fibs))[-2]
+}
+
+
+###########################################
+# Additional functions used for plotting
+###########################################
+
+#' Gaussian Error Function 
+erf <- function(x) {
+    2*pnorm(x * sqrt(2)) - 1
+}
+
+######################
+# Preliminary Figures
+######################
+
+
+# Illustration of invasion conditions and proportion of parameter
+# space permitting balancing selection under classic weak-selection
+# approximation
+classicParamSpaceFig  <-  function() {
+
+    # Set inbreeding values
+    inbreeding.states = c(0.1, 0.3, 0.5, 0.7)
+    F.I = inbreeding.states[1]
+
+    # define invasion condition functions
+    upper.classic = function(t.2){
+      t.2/F.I
+    }
+    lower.classic = function(t.2){
+      F.I*t.2
+    }
+
+    # Colors
+    colorBlindBlack8  <- c("#000000", "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7")
+
+    # set plot layout
+    layout.mat  <-  matrix(c(1,2), nrow=1, ncol=2, byrow=TRUE)
+    layout      <-  layout(layout.mat,respect=TRUE)
+
+    # Generate Plot
+    par(omi=c(0.5, 0.5, 0.5, 0.5), mar = c(4,4,4,1), bty='o', xaxt='s', yaxt='s')
+     # Panel (A) Polymorphic space
+     plot(NA, axes=FALSE, type='n', main='',xlim = c(0,1), ylim = c(0,1), ylab='', xlab='', cex.lab=1.2)
+        usr  <-  par('usr')
+        rect(usr[1], usr[3], usr[2], usr[4], col='white', border=NA)
+        plotGrid(lineCol='grey80')
+        box()
+        # Generate Curves
+        curve(upper.classic, 0, F.I, xlim = c(0, 1), lwd = 3, xlab = "t.2", ylab = "t.1", add=TRUE, col=colorBlindBlack8[1])
+        curve(lower.classic, 0, 1, add = TRUE, lwd = 3, col=colorBlindBlack8[1])
+        for(i in 2:4){
+            F.I = inbreeding.states[i]
+            curve(upper.classic, 0, F.I, add = TRUE, lwd = 3, col = colorBlindBlack8[i])
+            curve(lower.classic, 0, 1, add = TRUE, lwd = 3, col = colorBlindBlack8[i])
+        }
+        # axes
+        axis(1, las=1)
+        axis(2, las=1)
+        # Plot labels etc.
+        proportionalLabel(-0.2,  0.5,   expression(paste(italic(t[2]))), cex=1.3, adj=c(0.5, 0.5), xpd=NA, srt=90)        
+        proportionalLabel( 0.5,  -0.25, expression(paste(italic(t[1]))), cex=1.3, adj=c(0.5, 0.5), xpd=NA)        
+
+        proportionalLabel( 0.875,  0.17, expression(paste(italic(F), " = ", 0.1)), cex=1.2, adj=c(0.5, 0.5), xpd=NA, srt=8, col=colorBlindBlack8[1])
+        proportionalLabel( 0.875,  0.33,  expression(paste(italic(F), " = ", 0.3)), cex=1.2, adj=c(0.5, 0.5), xpd=NA, srt=13, col=colorBlindBlack8[2])
+        proportionalLabel( 0.875,  0.5,  expression(paste(italic(F), " = ", 0.5)), cex=1.2, adj=c(0.5, 0.5), xpd=NA, srt=25, col=colorBlindBlack8[3])
+        proportionalLabel( 0.875,  0.67,  expression(paste(italic(F), " = ", 0.7)), cex=1.2, adj=c(0.5, 0.5), xpd=NA, srt=30, col=colorBlindBlack8[4])
+
+     # Panel (B) Proportion of parameter space where balancing selection occurs
+     plot(NA, axes=FALSE, type='n', main='',xlim = c(0,1), ylim = c(0,1), ylab='', xlab='', cex.lab=1.2)
+        usr  <-  par('usr')
+        rect(usr[1], usr[3], usr[2], usr[4], col='white', border=NA)
+        plotGrid(lineCol='grey80')
+        box()
+        # Generate Lines + points
+        inbreeding.states = 0.05 + 0:9/10
+        Pr.balancing = rep(0, length(inbreeding.states))
+        for(i in 1:length(inbreeding.states)){
+          F.I = inbreeding.states[i]
+          t.1 = runif(10^6)
+          t.2 = runif(10^6)
+          condition = t.1 > t.2*F.I & t.1 < t.2/F.I
+          Pr.balancing[i] = length(condition[!condition == FALSE])/10^6
+        }
+        points(0:1000/1000, 1 - 0:1000/1000, type = "l", lwd = 3, xlab = "inbreeding coefficient (F)", ylab = "Pr.balancing")
+        points(inbreeding.states, Pr.balancing, pch = 16, col = "RED")
+        # axes
+        axis(1, las=1)
+        axis(2, las=1)
+        # Plot labels etc.
+        proportionalLabel(-0.2,  0.5,   expression(paste("Pr(balancing)")), cex=1.3, adj=c(0.5, 0.5), xpd=NA, srt=90)        
+        proportionalLabel( 0.5,  -0.25,  expression(paste("Inbreeding coefficient (", italic(F), ")")), cex=1.3, adj=c(0.5, 0.5), xpd=NA)
+        # Legend
+        legend(
+               x       =  usr[2]*0.88,
+               y       =  usr[4]*0.99,
+               legend  =  expression(paste(1-italic(F))),
+               lty     =  1,
+               col     =  colorBlindBlack8[1],
+               cex     =  1,
+               xjust   =  1,
+               yjust   =  1,
+               bty     =  'n',
+               border  =  NA
+               )
+        legend(
+               x       =  usr[2]*0.975,
+               y       =  usr[4]*0.91,
+               legend  =  expression(paste("Simulations")),
+               pch     =  21,
+               col     =  'red',
+               pt.bg   =  'red',
+               cex     =  1,
+               xjust   =  1,
+               yjust   =  1,
+               bty     =  'n',
+               border  =  NA
+               )
+
+}
+
+
+######################################
+# Ancillary functions for this figure
+# Functions for 
+Pr.inv.F  <-  function(x, F.I, h){
+  b  <-  (F.I + (1 - F.I)*h^2)/(F.I + (1 - F.I)*h)
+  1 - pnorm(x*b)
+}
+Pr.bal.F = function(x, F.I, h){
+  a  <-  (1 - (1 - F.I)*h^2)/(1 - (1 - F.I)*h)
+  b  <-  (F.I + (1 - F.I)*h^2)/(F.I + (1 - F.I)*h)
+  pnorm(x*a) - pnorm(x*b)
+}
+Pr.pos.F = function(x, F.I, h){
+  a  <-  (1 - (1 - F.I)*h^2)/(1 - (1 - F.I)*h)
+  1 - pnorm(x*a)
+}
+Pr.inv = function(x, h){
+  b  <-  h
+  1 - pnorm(x*b)
+}
+Pr.bal = function(x, h){
+  a  <-  (1 + h)
+  b  <-  h
+  pnorm(x*a) - pnorm(x*b)
+}
+Pr.pos = function(x, h){
+  a  <-  (1 + h)
+  b  <-  h
+  1 - pnorm(x*a)
+}
+rBal_smallMutLimit  <-  function(F.I, h){
+    (1 - F.I)*h*(1 - h)*(1/(1 - (1 - F.I)*h) + 1/(F.I + (1 - F.I)*h))
+}
+
+# Ratio of balancing selection ((F > 0) vs. (F = 0) in black); 
+# 1 - F in red
+RelBalancingFig  <-  function(F.I = 1/2, h=1/2) {
+    
+    # mutation size
+    sizes  <-  1:1000/200
+
+    # Colors
+    colorBlindBlack8  <- c("#000000", "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7")
+
+    # set plot layout
+    layout.mat  <-  matrix(c(1,2), nrow=1, ncol=2, byrow=TRUE)
+    layout      <-  layout(layout.mat,respect=TRUE)
+
+    # Generate Plot
+    par(omi=c(0.5, 0.5, 0.5, 0.5), mar = c(4,4,4,1), bty='o', xaxt='s', yaxt='s')
+     # Panel (A) Ratio of Balancing selection for inbreeding to outcrossing
+     plot(NA, axes=FALSE, type='n', main='',xlim = c(0,5), ylim = c(0,0.7), ylab='', xlab='', cex.lab=1.2)
+        usr  <-  par('usr')
+        rect(usr[1], usr[3], usr[2], usr[4], col='white', border=NA)
+        plotGrid(lineCol='grey80')
+        box()
+        # Generate Curves
+        Rbal     <-  Pr.bal.F(x=sizes, F.I=F.I, h=h)/Pr.bal(x=sizes, h=h)
+        RbalLim  <-  rBal_smallMutLimit(F.I=F.I, h=h)
+        lines(Rbal ~ sizes,  col = "grey60", lwd = 3)
+        lines(rep(1 - F.I, length(sizes)) ~ sizes, lwd = 3)
+        lines(rep(RbalLim, length(sizes)) ~ sizes, lty = 3, lwd = 3)
+        # Simulations
+        RbalSim  <-  relBalancingMutSize_Sims()
+        points(rBal ~ x, pch=21, col=transparentColor(colorBlindBlack8[1], opacity=0.6), bg=transparentColor(colorBlindBlack8[1], opacity=0.4), data=RbalSim)
+        # axes
+        axis(1, las=1)
+        axis(2, las=1)
+        # Plot labels etc.
+        proportionalLabel(0.5,  1.1,   expression(paste(italic(F), " = ", italic(h), " = ", 1/2)), cex=1.5, adj=c(0.5, 0.5), xpd=NA)        
+        proportionalLabel(-0.25,  0.5,  expression(paste("Relative probability (", italic(R[bal]), ")")), cex=1.3, adj=c(0.5, 0.5), xpd=NA, srt=90)        
+        proportionalLabel( 0.5,  -0.25, expression(paste("Mutation size (", italic(x), ")")), cex=1.3, adj=c(0.5, 0.5), xpd=NA)        
+        # Legend
+        legend(
+               x       =  usr[2]*0.35,
+               y       =  usr[4]*0.99,
+               legend  =  c(expression(paste(1-italic(F))),
+                            expression(paste(Eq(18))),
+                            expression(paste(Eq(15)))),
+               lty     =  c(1, 3, 1),
+               lwd     =  3,
+               col     =  c(colorBlindBlack8[1], colorBlindBlack8[1], "grey60"),
+               cex     =  1,
+               xjust   =  1,
+               yjust   =  1,
+               bty     =  'n',
+               border  =  NA
+               )
+        # Legend
+        legend(
+               x       =  usr[2]*0.7,
+               y       =  usr[4]*0.99,
+               legend  =  c(expression(paste("Simulations"))),
+               pch     =  21,
+               pt.bg   =  transparentColor(colorBlindBlack8[1], opacity=0.4),
+               col     =  transparentColor(colorBlindBlack8[1], opacity=0.6),
+               cex     =  1,
+               xjust   =  1,
+               yjust   =  1,
+               bty     =  'n',
+               border  =  NA
+               )
+
+    # Panel (B) Proportion of parameter space where balancing selection occurs
+    F.values = 0:100/100
+    h.i = c(0.5, 0.25, 0.1)
+    plot(NA, axes=FALSE, type='n', main='',xlim = c(0,1), ylim = c(0,1), ylab='', xlab='', cex.lab=1.2)
+        usr  <-  par('usr')
+        rect(usr[1], usr[3], usr[2], usr[4], col='white', border=NA)
+        plotGrid(lineCol='grey80')
+        box()
+        # Generate Lines + points
+        lines(rBal_smallMutLimit(F.I = F.values, h = h.i[1]) ~ F.values, type = "l", xlab = "inbreeding coefficient (F)", ylab = "reduction in Pr(bal.)", col = colorBlindBlack8[2], lwd = 3)
+        lines(rBal_smallMutLimit(F.I = F.values, h = h.i[2]) ~ F.values, type = "l", xlab = "inbreeding coefficient (F)", ylab = "reduction in Pr(bal.)", col = colorBlindBlack8[3], lwd = 3)
+        lines(rBal_smallMutLimit(F.I = F.values, h = h.i[3]) ~ F.values, type = "l", xlab = "inbreeding coefficient (F)", ylab = "reduction in Pr(bal.)", col = colorBlindBlack8[4], lwd = 3)
+        lines((1 - F.values) ~ F.values, col = colorBlindBlack8[1], lwd = 3)
+                # Simulations
+        RbalSim_h1  <-  relBalancingSmallx_F_Sims(h=1/2)
+        RbalSim_h2  <-  relBalancingSmallx_F_Sims(h=1/4)
+        RbalSim_h3  <-  relBalancingSmallx_F_Sims(h=1/10)
+        points(rBal ~ F, pch=21, col=transparentColor(colorBlindBlack8[2], opacity=0.6), bg=transparentColor(colorBlindBlack8[2], opacity=0.4), data=RbalSim_h1)
+        points(rBal ~ F, pch=21, col=transparentColor(colorBlindBlack8[3], opacity=0.6), bg=transparentColor(colorBlindBlack8[3], opacity=0.4), data=RbalSim_h2)
+        points(rBal ~ F, pch=21, col=transparentColor(colorBlindBlack8[4], opacity=0.6), bg=transparentColor(colorBlindBlack8[4], opacity=0.4), data=RbalSim_h3)
+        # axes
+        axis(1, las=1)
+        axis(2, labels=NA)
+        # Plot labels etc.
+        proportionalLabel(0.5,  1.1,   expression(paste("Small-mutation limit (", italic(x)%->%0, ")")), cex=1.5, adj=c(0.5, 0.5), xpd=NA)        
+        proportionalLabel( 0.5,  -0.25,  expression(paste("Inbreeding coefficient (", italic(F), ")")), cex=1.3, adj=c(0.5, 0.5), xpd=NA)
+        # Legend
+        legend(
+               x       =  usr[2]*0.99,
+               y       =  usr[4]*0.99,
+               legend  =  c(expression(paste(1-italic(F))),
+                            expression(paste(Eq(17), "; ", italic(h)==1/2)),
+                            expression(paste(Eq(17), "; ", italic(h)==1/4)),
+                            expression(paste(Eq(17), "; ", italic(h)==1/10))),
+               lty     =  1,
+               lwd     =  3,
+               col     =  c(colorBlindBlack8[1], colorBlindBlack8[2], colorBlindBlack8[3], colorBlindBlack8[4]),
+               cex     =  1,
+               xjust   =  1,
+               yjust   =  1,
+               bty     =  'n',
+               border  =  NA
+               )
+
+}
+
+
+######################################
+# Ancillary functions for this figure
+# Functions for 
+xMaxF  <- function(a,b){
+  sqrt(2*log(a/b)/(a^2 - b^2))
+}
+xMax  <-  function(h){
+  sqrt(2*log((1 + h)/h)/(1 + 2*h))
+}
+funa  <-  function(F,h) {
+  (1 - (1 - F)*h^2)/(1 - (1 - F)*h)
+}
+funb  <-  function(F,h) {
+  (F + (1 - F)*h^2)/(F + (1 - F)*h)
+}
+
+
+# ratio of mutation size with maximal probability of balancing selection
+# for inbred relative to outcrossing populations
+relMutSizeMaxRBal  <-  function() {
+F.values = 0:99/100
+h.1 = 0.5
+h.2 = 0.25
+h.3 = 0.1
+
+xMaxFs.1  <-  xMaxF(a = funa(F=F.values, h=h.1), b=funb(F = F.values, h = h.1))
+xMaxs.1  <-  xMax(h=h.1)
+xMaxFs.2  <-  xMaxF(a = funa(F=F.values, h=h.2), b=funb(F = F.values, h = h.2))
+xMaxs.2  <-  xMax(h=h.2)
+xMaxFs.3  <-  xMaxF(a = funa(F=F.values, h=h.3), b=funb(F = F.values, h = h.3))
+xMaxs.3  <-  xMax(h=h.3)
+
+# ratio of mutation size with maximal probability of balancing selection
+# for inbred relative to outcrossing populations
+# pdf(file = "./notes/img/xMaxPlot.pdf",   # The directory you want to save the file in
+#     width = 6, # The width of the plot in inches
+#     height = 5) # The height of the plot in inches
+par(omi=c(0.5, 0.25, 0.25, 0.5), mar = c(5,5,1,1))
+plot((xMaxFs.1/xMaxs.1) ~ F.values, ylim=c(0, 1), type='l', lwd=2, col=colorBlindBlack8[1], ylab=expression(paste(italic(hat(x)[F]), "/", hat(x)[out])), xlab=expression(italic(F)))
+lines((xMaxFs.2/xMaxs.2) ~ F.values, ylim=c(0, 1), lwd=2, col=colorBlindBlack8[2])
+lines((xMaxFs.3/xMaxs.3) ~ F.values, ylim=c(0, 1), lwd=2, col=colorBlindBlack8[3])
+legend(
+               x       =  1,
+               y       =  0.25,
+               legend  =  c(
+                            expression(paste(italic(h), " = 1/2")),
+                            expression(paste(italic(h), " = 1/4")),
+                            expression(paste(italic(h), " = 1/10"))),
+               lty     =  1,
+               lwd     =  2,
+               col     =  c(colorBlindBlack8[1], colorBlindBlack8[2], colorBlindBlack8[3]),
+               cex     =  1,
+               xjust   =  1,
+               yjust   =  1,
+               bty     =  'n',
+               border  =  NA,
+               xpd=NA
+               )
+
 }
 
