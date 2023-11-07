@@ -5,6 +5,7 @@ library(extrafont)
 library(fontcm)
 loadfonts(quiet = TRUE)
 library(wesanderson)
+library(plotrix)
 
 #######################
 # AUXILLIARY FUNCTIONS
@@ -270,7 +271,77 @@ classicParamSpaceFig  <-  function() {
 }
 
 
+
 ######################################
+# Kimura-Ohta strong-selection fig
+
+KO_InvCond_F_up  <-  function(s1, F) {
+  S  <-  (2*F)/(F + 1)
+  (s1*(2 - S - 2*s1))/(S*(1 - 2*s1))
+}
+KO_InvCond_F_low  <-  function(s1, F) {
+  S  <-  (2*F)/(F + 1)
+  (1/2)*(1 - sqrt(1 - S + (S^2)*(1/2 - s1)^2) - S*(1/2 - s1))
+}
+
+KimuraOhta_InvPlot  <- function() {
+
+    # Colors
+    COL8  <-  c("#000000", "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7")
+
+    # set plot layout
+    layout.mat  <-  matrix(c(1), nrow=1, ncol=1, byrow=TRUE)
+    layout      <-  layout(layout.mat,respect=TRUE)
+
+    # Generate Plot
+    par(omi=c(1, 1, 0.75, 1), mar = c(5,5,1,1), bty='o', xaxt='s', yaxt='s')
+     # Panel (A) F = 0
+     plot(NA, axes=FALSE, type='n', main='', xlim = c(0,1), ylim = c(0,1), ylab='', xlab='', cex.lab=1.2)
+        usr  <-  par('usr')
+        rect(usr[1], usr[3], usr[2], usr[4], col='white', border=NA)
+        plotGrid(lineCol='grey80')
+        box()
+        # Plot lower invasion boundaries
+        s1.vals  <-  seq(0,1,0.01)
+        lines(KO_InvCond_F_low(s1 = s1.vals, F=0.1) ~ s1.vals, ylim=c(0, 1), lwd=2, col=COL8[1])
+        lines(KO_InvCond_F_low(s1 = s1.vals, F=0.3) ~ s1.vals, ylim=c(0, 1), lwd=2, col=COL8[2])
+        lines(KO_InvCond_F_low(s1 = s1.vals, F=0.5) ~ s1.vals, ylim=c(0, 1), lwd=2, col=COL8[3])
+        lines(KO_InvCond_F_low(s1 = s1.vals, F=0.7) ~ s1.vals, ylim=c(0, 1), lwd=2, col=COL8[4])
+        lines(KO_InvCond_F_low(s1 = s1.vals, F=0.98) ~ s1.vals, ylim=c(0, 1), lwd=2, col=COL8[6])
+        # Polygon showing always polymorphic space
+        segments(0.0,0.0,1,1, lwd=2, lty=3)
+        polygon(c(0.5,0.5,1,1), c(0.5,1,1,0.5), col=adjustcolor(COL8[1], alpha=0.25))
+        # Plot lower invasion boundaries
+        s1.vals  <-  seq(0,0.5,0.001)
+        lines(KO_InvCond_F_up(s1 = s1.vals, F=0.1)[KO_InvCond_F_up(s1 = s1.vals, F=0.1) <=1] ~ s1.vals[KO_InvCond_F_up(s1 = s1.vals, F=0.1) <=1], ylim=c(0, 1), lwd=2, col=COL8[1])
+        lines(KO_InvCond_F_up(s1 = s1.vals, F=0.3)[KO_InvCond_F_up(s1 = s1.vals, F=0.3) <=1] ~ s1.vals[KO_InvCond_F_up(s1 = s1.vals, F=0.3) <=1], ylim=c(0, 1), lwd=2, col=COL8[2])
+        lines(KO_InvCond_F_up(s1 = s1.vals, F=0.5)[KO_InvCond_F_up(s1 = s1.vals, F=0.5) <=1] ~ s1.vals[KO_InvCond_F_up(s1 = s1.vals, F=0.5) <=1], ylim=c(0, 1), lwd=2, col=COL8[3])
+        lines(KO_InvCond_F_up(s1 = s1.vals, F=0.7)[KO_InvCond_F_up(s1 = s1.vals, F=0.7) <=1] ~ s1.vals[KO_InvCond_F_up(s1 = s1.vals, F=0.7) <=1], ylim=c(0, 1), lwd=2, col=COL8[4])
+        s1.vals  <-  seq(0,0.5,0.0001)
+        lines(KO_InvCond_F_up(s1 = s1.vals, F=0.98)[KO_InvCond_F_up(s1 = s1.vals, F=0.98) <=1] ~ s1.vals[KO_InvCond_F_up(s1 = s1.vals, F=0.98) <=1], ylim=c(0, 1), lwd=2, col=COL8[6])
+        # Inv Cond. Annotations
+        proportionalLabel( 0.875,  0.15, expression(paste(italic(F), " = ", 0.1)), cex=1.2, adj=c(0.5, 0.5), xpd=NA, srt=6, col=COL8[1])
+        proportionalLabel( 0.875,  0.27,  expression(paste(italic(F), " = ", 0.3)), cex=1.2, adj=c(0.5, 0.5), xpd=NA, srt=12, col=COL8[2])
+        proportionalLabel( 0.875,  0.36,  expression(paste(italic(F), " = ", 0.5)), cex=1.2, adj=c(0.5, 0.5), xpd=NA, srt=14, col=COL8[3])
+        proportionalLabel( 0.875,  0.44,  expression(paste(italic(F), " = ", 0.7)), cex=1.2, adj=c(0.5, 0.5), xpd=NA, srt=12, col=COL8[4])
+        proportionalLabel( 0.65,  0.45,  expression(paste(italic(F), " = ", 0.98)), cex=1.2, adj=c(0.5, 0.5), xpd=NA, srt=3, col=COL8[6])
+        # axes
+        axis(1, las=1)
+        axis(2, las=1)
+        # Plot labels etc.
+        proportionalLabel(0.5,  1.05,   expression(paste("Kimura-Ohta Result")), cex=1.5, adj=c(0.5, 0.5), xpd=NA)
+        proportionalLabel(0.75,  0.78,   expression(paste("Always")), cex=1.2, adj=c(0.5, 0.5), xpd=NA)
+        proportionalLabel(0.75,  0.72,   expression(paste("Polymorphic")), cex=1.2, adj=c(0.5, 0.5), xpd=NA)
+        proportionalLabel( 0.5, -0.2, expression(paste(italic(s[1]))), cex=1.3, adj=c(0.5, 0.5), xpd=NA)
+        proportionalLabel(-0.2, 0.5,   expression(paste(italic(s[2]))), cex=1.3, adj=c(0.5, 0.5), xpd=NA, srt=90)
+
+}
+
+
+######################################
+# Ratio of balancing selection ((F > 0) vs. (F = 0) in black); 
+# 1 - F in red
+
 # Ancillary functions for this figure
 # Functions for 
 Pr.inv.F  <-  function(x, F.I, h){
@@ -304,8 +375,7 @@ rBal_smallMutLimit  <-  function(F.I, h){
     (1 - F.I)*h*(1 - h)*(1/(1 - (1 - F.I)*h) + 1/(F.I + (1 - F.I)*h))
 }
 
-# Ratio of balancing selection ((F > 0) vs. (F = 0) in black); 
-# 1 - F in red
+# Ratio of inbred/outcross balancing selection
 RelBalancingFig  <-  function(F.I = 1/2, h=1/2) {
     
     # mutation size
@@ -486,10 +556,10 @@ legend(
 ###################################
 # Visualize 2-d FGM for Inbreeding
 
-Fisher_2D_ExploreFig <-  function(h = 1/2, reps=10^4) {
+Fisher_2D_ExploreFig <-  function(z = 1, h = 1/2, reps=10^4) {
     
     # Create data for plotting
-    dat <-  Fisher_2D_ExploreFigSims(h = h, reps = reps)
+    dat <-  Fisher_2D_ExploreFigSims(z = z, h = h, reps = reps)
 
     # Colors
     COL8  <-  c("#000000", "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7")
@@ -499,10 +569,11 @@ Fisher_2D_ExploreFig <-  function(h = 1/2, reps=10^4) {
     layout      <-  layout(layout.mat,respect=TRUE)
 
     # Generate Plot
-    par(omi=c(0.5, 0.5, 0.5, 0.5), mar = c(4,4,4,1), bty='o', xaxt='s', yaxt='s')
+    par(omi=c(1, 1, 0.75, 1), mar = c(5,5,1,1), bty='o', xaxt='s', yaxt='s')
 
      # Panel (A) F = 0
-     plot(NA, axes=FALSE, type='n', main='', xlim = c(-2.05,2.05), ylim = c(-1.05,3), ylab='', xlab='', cex.lab=1.2)
+     plot(NA, axes=FALSE, type='n', main='', xlim = c(min(dat$z.hom.raw.2[dat$F == 0.2 & dat$BalSel.out == 1]),max(dat$z.hom.raw.2[dat$F == 0.2 & dat$BalSel.out == 1])), 
+                                             ylim = c(min(dat$z.hom.raw.1[dat$F == 0.2 & dat$BalSel.out == 1]),max(dat$z.hom.raw.1[dat$F == 0.2 & dat$BalSel.out == 1])), ylab='', xlab='', cex.lab=1.2)
         usr  <-  par('usr')
         rect(usr[1], usr[3], usr[2], usr[4], col='white', border=NA)
         plotGrid(lineCol='grey80')
@@ -510,23 +581,28 @@ Fisher_2D_ExploreFig <-  function(h = 1/2, reps=10^4) {
         # Plot Points
         points(z.hom.raw.1[F == 0.2 & BalSel.out == 1] ~ 
                z.hom.raw.2[F == 0.2 & BalSel.out == 1], pch=21, col=transparentColor(COL8[3], opacity=0.6), bg=transparentColor(COL8[3], opacity=0.4), data=dat)
-        points(z.hom.raw.1[F == 0.2 & PosSel == 1] ~ 
-               z.hom.raw.2[F == 0.2 & PosSel == 1], pch=21, col=transparentColor(COL8[2], opacity=0.6), bg=transparentColor(COL8[2], opacity=0.4), data=dat)
-        points(0,0, pch=21, col=1, bg=1) # Phenotypic Optimum
-        points(0,-1, pch=21, col=2, bg=2) # Wild-type population phenotype
+        points(z.hom.raw.1[F == 0.2 & PosSel.out == 1] ~ 
+               z.hom.raw.2[F == 0.2 & PosSel.out == 1], pch=21, col=transparentColor(COL8[2], opacity=0.6), bg=transparentColor(COL8[2], opacity=0.4), data=dat)
+        # Analytic ranges of pos. & bal. sel.
+        # draw.circle(0,0,1, lwd=1.5, border=COL8[1]) # pos. sel.
+        draw.circle(0,((1 - h)/h)*z,(z/h), lty=1, lwd=1.5, border=COL8[1]) # bal. sel.
+        draw.circle(0,0,z, lty=2, lwd=1.5, border=COL8[1]) # bal. sel.
+        points(0,0, pch=21, col=1, bg=1, cex=1.5) # Phenotypic Optimum
+        points(0,-z, pch=21, col=2, bg=2, cex=1.5) # Wild-type population phenotype
         # axes
         axis(1, las=1)
         axis(2, las=1)
         # Plot labels etc.
-        proportionalLabel(0.5,  1.1,   expression(paste("Outcrossing")), cex=1.5, adj=c(0.5, 0.5), xpd=NA)
+        proportionalLabel(0.5,  1.05,   expression(paste("Outcrossing")), cex=2, adj=c(0.5, 0.5), xpd=NA)
         proportionalLabel(-0.2, 0.5,   expression(paste("Dimension 2")), cex=1.3, adj=c(0.5, 0.5), xpd=NA, srt=90)
 
         proportionalLabel(0.525,  0.25, expression(paste(italic(O))), cex=1.5, adj=c(0.5, 0.5), xpd=NA)
-        proportionalLabel(0.525,  0.025,    expression(paste(italic(A))), cex=1.5, adj=c(0.5, 0.5), xpd=NA)
+        proportionalLabel(0.525,  0.09,    expression(paste(italic(A))), cex=1.5, adj=c(0.5, 0.5), xpd=NA)
 
 
      # Panel (B) F = 0.2
-     plot(NA, axes=FALSE, type='n', main='', xlim = c(-2.05,2.05), ylim = c(-1.05,3), ylab='', xlab='', cex.lab=1.2)
+     plot(NA, axes=FALSE, type='n', main='', xlim = c(min(dat$z.hom.raw.2[dat$F == 0.2 & dat$BalSel.out == 1]),max(dat$z.hom.raw.2[dat$F == 0.2 & dat$BalSel.out == 1])), 
+                                             ylim = c(min(dat$z.hom.raw.1[dat$F == 0.2 & dat$BalSel.out == 1]),max(dat$z.hom.raw.1[dat$F == 0.2 & dat$BalSel.out == 1])), ylab='', xlab='', cex.lab=1.2)
         usr  <-  par('usr')
         rect(usr[1], usr[3], usr[2], usr[4], col='white', border=NA)
         plotGrid(lineCol='grey80')
@@ -534,18 +610,20 @@ Fisher_2D_ExploreFig <-  function(h = 1/2, reps=10^4) {
         # Plot Points
         points(z.hom.raw.1[F == 0.2 & BalSel.F == 1] ~ 
                z.hom.raw.2[F == 0.2 & BalSel.F == 1], pch=21, col=transparentColor(COL8[3], opacity=0.6), bg=transparentColor(COL8[3], opacity=0.4), data=dat)
-        points(z.hom.raw.1[F == 0.2 & PosSel == 1] ~ 
-               z.hom.raw.2[F == 0.2 & PosSel == 1], pch=21, col=transparentColor(COL8[2], opacity=0.6), bg=transparentColor(COL8[2], opacity=0.4), data=dat)
-        points(0,0, pch=21, col=1, bg=1) # Phenotypic Optimum
-        points(0,-1, pch=21, col=2, bg=2) # Wild-type population phenotype
+        points(z.hom.raw.1[F == 0.2 & PosSel.F == 1] ~ 
+               z.hom.raw.2[F == 0.2 & PosSel.F == 1], pch=21, col=transparentColor(COL8[2], opacity=0.6), bg=transparentColor(COL8[2], opacity=0.4), data=dat)
+        draw.circle(0,0,z, lty=2, lwd=1.5, border=COL8[1]) # bal. sel.
+        points(0,0, pch=21, col=1, bg=1, cex=1.5) # Phenotypic Optimum
+        points(0,-z, pch=21, col=2, bg=2, cex=1.5) # Wild-type population phenotype
         # axes
         axis(1, las=1)
         axis(2, labels=NA)
         # Plot labels etc.
-        proportionalLabel(0.5,  1.1,   expression(paste(italic(F)," = ", 0.2)), cex=1.5, adj=c(0.5, 0.5), xpd=NA)
+        proportionalLabel(0.5,  1.05,   expression(paste(italic(F)," = ", 0.2)), cex=2, adj=c(0.5, 0.5), xpd=NA)
 
      # Panel (C) F = 0.4
-     plot(NA, axes=FALSE, type='n', main='', xlim = c(-2.05,2.05), ylim = c(-1.05,3), ylab='', xlab='', cex.lab=1.2)
+     plot(NA, axes=FALSE, type='n', main='', xlim = c(min(dat$z.hom.raw.2[dat$F == 0.2 & dat$BalSel.out == 1]),max(dat$z.hom.raw.2[dat$F == 0.2 & dat$BalSel.out == 1])), 
+                                             ylim = c(min(dat$z.hom.raw.1[dat$F == 0.2 & dat$BalSel.out == 1]),max(dat$z.hom.raw.1[dat$F == 0.2 & dat$BalSel.out == 1])), ylab='', xlab='', cex.lab=1.2)
         usr  <-  par('usr')
         rect(usr[1], usr[3], usr[2], usr[4], col='white', border=NA)
         plotGrid(lineCol='grey80')
@@ -555,15 +633,16 @@ Fisher_2D_ExploreFig <-  function(h = 1/2, reps=10^4) {
         points(z.hom.raw.1[F == 0.4 & BalSel.F == 1] ~ 
                z.hom.raw.2[F == 0.4 & BalSel.F == 1], pch=21, col=transparentColor(COL8[3], opacity=0.6), bg=transparentColor(COL8[3], opacity=0.4), data=dat)
         # Positive sel
-        points(z.hom.raw.1[F == 0.4 & PosSel == 1] ~ 
-               z.hom.raw.2[F == 0.4 & PosSel == 1], pch=21, col=transparentColor(COL8[2], opacity=0.6), bg=transparentColor(COL8[2], opacity=0.4), data=dat)
-        points(0,0, pch=21, col=1, bg=1) # Phenotypic Optimum
-        points(0,-1, pch=21, col=2, bg=2) # Wild-type population phenotype
+        points(z.hom.raw.1[F == 0.4 & PosSel.F == 1] ~ 
+               z.hom.raw.2[F == 0.4 & PosSel.F == 1], pch=21, col=transparentColor(COL8[2], opacity=0.6), bg=transparentColor(COL8[2], opacity=0.4), data=dat)
+        draw.circle(0,0,z, lty=2, lwd=1.5, border=COL8[1]) # bal. sel.
+        points(0,0, pch=21, col=1, bg=1, cex=1.5) # Phenotypic Optimum
+        points(0,-z, pch=21, col=2, bg=2, cex=1.5) # Wild-type population phenotype
        # axes
         axis(1, las=1)
         axis(2, labels=NA)
         # Plot labels etc.
-        proportionalLabel(0.5,  1.1,   expression(paste(italic(F)," = ", 0.4)), cex=1.5, adj=c(0.5, 0.5), xpd=NA)
+        proportionalLabel(0.5,  1.05,   expression(paste(italic(F)," = ", 0.4)), cex=2, adj=c(0.5, 0.5), xpd=NA)
         # Legend
         legend(
                x       =  usr[2]*0.9,
@@ -583,7 +662,8 @@ Fisher_2D_ExploreFig <-  function(h = 1/2, reps=10^4) {
                )
 
      # Panel (D) F = 0.6
-     plot(NA, axes=FALSE, type='n', main='', xlim = c(-2.05,2.05), ylim = c(-1.05,3), ylab='', xlab='', cex.lab=1.2)
+     plot(NA, axes=FALSE, type='n', main='', xlim = c(min(dat$z.hom.raw.2[dat$F == 0.2 & dat$BalSel.out == 1]),max(dat$z.hom.raw.2[dat$F == 0.2 & dat$BalSel.out == 1])), 
+                                             ylim = c(min(dat$z.hom.raw.1[dat$F == 0.2 & dat$BalSel.out == 1]),max(dat$z.hom.raw.1[dat$F == 0.2 & dat$BalSel.out == 1])), ylab='', xlab='', cex.lab=1.2)
         usr  <-  par('usr')
         rect(usr[1], usr[3], usr[2], usr[4], col='white', border=NA)
         plotGrid(lineCol='grey80')
@@ -593,20 +673,22 @@ Fisher_2D_ExploreFig <-  function(h = 1/2, reps=10^4) {
         points(z.hom.raw.1[F == 0.6 & BalSel.F == 1] ~ 
                z.hom.raw.2[F == 0.6 & BalSel.F == 1], pch=21, col=transparentColor(COL8[3], opacity=0.6), bg=transparentColor(COL8[3], opacity=0.4), data=dat)
         # Positive sel
-        points(z.hom.raw.1[F == 0.6 & PosSel == 1] ~ 
-               z.hom.raw.2[F == 0.6 & PosSel == 1], pch=21, col=transparentColor(COL8[2], opacity=0.6), bg=transparentColor(COL8[2], opacity=0.4), data=dat)
-        points(0,0, pch=21, col=1, bg=1) # Phenotypic Optimum
-        points(0,-1, pch=21, col=2, bg=2) # Wild-type population phenotype
+        points(z.hom.raw.1[F == 0.6 & PosSel.F == 1] ~ 
+               z.hom.raw.2[F == 0.6 & PosSel.F == 1], pch=21, col=transparentColor(COL8[2], opacity=0.6), bg=transparentColor(COL8[2], opacity=0.4), data=dat)
+        draw.circle(0,0,z, lty=2, lwd=1.5, border=COL8[1]) # bal. sel.
+        points(0,0, pch=21, col=1, bg=1, cex=1.5) # Phenotypic Optimum
+        points(0,-z, pch=21, col=2, bg=2, cex=1.5) # Wild-type population phenotype
        # axes
         axis(1, las=1)
         axis(2, las=1)
         # Plot labels etc.
-        proportionalLabel(0.5,  1.1,   expression(paste(italic(F)," = ", 0.6)), cex=1.5, adj=c(0.5, 0.5), xpd=NA)
+        proportionalLabel(0.5,  1.05,   expression(paste(italic(F)," = ", 0.6)), cex=2, adj=c(0.5, 0.5), xpd=NA)
         proportionalLabel( 0.5, -0.2, expression(paste("Dimension 1")), cex=1.3, adj=c(0.5, 0.5), xpd=NA)
         proportionalLabel(-0.2, 0.5,   expression(paste("Dimension 2")), cex=1.3, adj=c(0.5, 0.5), xpd=NA, srt=90)
 
      # Panel (E) F = 0.8
-     plot(NA, axes=FALSE, type='n', main='', xlim = c(-2.05,2.05), ylim = c(-1.05,3), ylab='', xlab='', cex.lab=1.2)
+     plot(NA, axes=FALSE, type='n', main='', xlim = c(min(dat$z.hom.raw.2[dat$F == 0.2 & dat$BalSel.out == 1]),max(dat$z.hom.raw.2[dat$F == 0.2 & dat$BalSel.out == 1])), 
+                                             ylim = c(min(dat$z.hom.raw.1[dat$F == 0.2 & dat$BalSel.out == 1]),max(dat$z.hom.raw.1[dat$F == 0.2 & dat$BalSel.out == 1])), ylab='', xlab='', cex.lab=1.2)
         usr  <-  par('usr')
         rect(usr[1], usr[3], usr[2], usr[4], col='white', border=NA)
         plotGrid(lineCol='grey80')
@@ -616,36 +698,40 @@ Fisher_2D_ExploreFig <-  function(h = 1/2, reps=10^4) {
         points(z.hom.raw.1[F == 0.8 & BalSel.F == 1] ~ 
                z.hom.raw.2[F == 0.8 & BalSel.F == 1], pch=21, col=transparentColor(COL8[3], opacity=0.6), bg=transparentColor(COL8[3], opacity=0.4), data=dat)
         # Positive sel
-        points(z.hom.raw.1[F == 0.8 & PosSel == 1] ~ 
-               z.hom.raw.2[F == 0.8 & PosSel == 1], pch=21, col=transparentColor(COL8[2], opacity=0.6), bg=transparentColor(COL8[2], opacity=0.4), data=dat)
-        points(0,0, pch=21, col=1, bg=1) # Phenotypic Optimum
-        points(0,-1, pch=21, col=2, bg=2) # Wild-type population phenotype
+        points(z.hom.raw.1[F == 0.8 & PosSel.F == 1] ~ 
+               z.hom.raw.2[F == 0.8 & PosSel.F == 1], pch=21, col=transparentColor(COL8[2], opacity=0.6), bg=transparentColor(COL8[2], opacity=0.4), data=dat)
+        draw.circle(0,0,z, lty=2, lwd=1.5, border=COL8[1]) # bal. sel.
+        points(0,0, pch=21, col=1, bg=1, cex=1.5) # Phenotypic Optimum
+        points(0,-z, pch=21, col=2, bg=2, cex=1.5) # Wild-type population phenotype
        # axes
         axis(1, las=1)
         axis(2, labels=NA)
         # Plot labels etc.
-        proportionalLabel(0.5,  1.1,   expression(paste(italic(F)," = ", 0.8)), cex=1.5, adj=c(0.5, 0.5), xpd=NA)
+        proportionalLabel(0.5,  1.05,   expression(paste(italic(F)," = ", 0.8)), cex=2, adj=c(0.5, 0.5), xpd=NA)
         proportionalLabel( 0.5, -0.2, expression(paste("Dimension 1")), cex=1.3, adj=c(0.5, 0.5), xpd=NA)
 
-     # Panel (F) F = 1.0
-     plot(NA, axes=FALSE, type='n', main='', xlim = c(-2.05,2.05), ylim = c(-1.05,3), ylab='', xlab='', cex.lab=1.2)
+     # Panel (F) F = 0.98
+     plot(NA, axes=FALSE, type='n', main='', xlim = c(min(dat$z.hom.raw.2[dat$F == 0.2 & dat$BalSel.out == 1]),max(dat$z.hom.raw.2[dat$F == 0.2 & dat$BalSel.out == 1])), 
+                                             ylim = c(min(dat$z.hom.raw.1[dat$F == 0.2 & dat$BalSel.out == 1]),max(dat$z.hom.raw.1[dat$F == 0.2 & dat$BalSel.out == 1])), ylab='', xlab='', cex.lab=1.2)
         usr  <-  par('usr')
         rect(usr[1], usr[3], usr[2], usr[4], col='white', border=NA)
         plotGrid(lineCol='grey80')
         box()
         # Plot Points
         # Balancing sel
-        points(z.hom.raw.1[F == 1.0 & BalSel.F == 1] ~ 
-               z.hom.raw.2[F == 1.0 & BalSel.F == 1], pch=21, col=transparentColor(COL8[3], opacity=0.6), bg=transparentColor(COL8[3], opacity=0.4), data=dat)
+        points(z.hom.raw.1[F == 0.98 & BalSel.F == 1] ~ 
+               z.hom.raw.2[F == 0.98 & BalSel.F == 1], pch=21, col=transparentColor(COL8[3], opacity=0.6), bg=transparentColor(COL8[3], opacity=0.4), data=dat)
         # Positive sel
-        points(z.hom.raw.1[F == 1.0 & PosSel == 1] ~ 
-               z.hom.raw.2[F == 1.0 & PosSel == 1], pch=21, col=transparentColor(COL8[2], opacity=0.6), bg=transparentColor(COL8[2], opacity=0.4), data=dat)
-        points(0,0, pch=21, col=1, bg=1) # Phenotypic Optimum
-        points(0,-1, pch=21, col=2, bg=2) # Wild-type population phenotype
+        points(z.hom.raw.1[F == 0.98 & PosSel.F == 1] ~ 
+               z.hom.raw.2[F == 0.98 & PosSel.F == 1], pch=21, col=transparentColor(COL8[2], opacity=0.6), bg=transparentColor(COL8[2], opacity=0.4), data=dat)
+        # Analytic ranges of pos. & bal. sel.
+        draw.circle(0,0,z, lty=1, lwd=1.5, border=COL8[1]) # pos. sel.
+        points(0,0, pch=21, col=1, bg=1, cex=1.5) # Phenotypic Optimum
+        points(0,-z, pch=21, col=2, bg=2, cex=1.5) # Wild-type population phenotype
        # axes
         axis(1, las=1)
         axis(2, labels=NA)
         # Plot labels etc.
-        proportionalLabel(0.5,  1.1,   expression(paste(italic(F)," = ", 1.0)), cex=1.5, adj=c(0.5, 0.5), xpd=NA)
+        proportionalLabel(0.5,  1.05,   expression(paste(italic(F)," = ", 0.98)), cex=2, adj=c(0.5, 0.5), xpd=NA)
         proportionalLabel( 0.5, -0.2, expression(paste("Dimension 1")), cex=1.3, adj=c(0.5, 0.5), xpd=NA)
 }

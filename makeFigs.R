@@ -39,18 +39,44 @@ if(!figuresDirectoriesExist) {
 # Priliminary figures
 ########################
 
-#   -- Illustration of weak-selection classical results
-source('./R/functions-figures.R')
+# Illustration of weak-selection classical results
 toPdf(classicParamSpaceFig(), 
 			figPath(name='classicParamSpaceFig.pdf'), width=10, height=7)
 embed_fonts(figPath(name='classicParamSpaceFig.pdf'))
 
+# Relative proporiton of parameter space resulting in
+# balancing selection. Weak-selection classical results.
 toPdf(RelBalancingFig(), 
 			figPath(name='RelBalancingFig.pdf'), width=10, height=7)
 embed_fonts(figPath(name='RelBalancingFig.pdf'))
 
+# Kimura-Ohta invasion plot for arbitrary selection strength
+toPdf(KimuraOhta_InvPlot(), 
+			figPath(name='KimuraOhta_InvPlot.pdf'), width=10, height=7)
+embed_fonts(figPath(name='KimuraOhta_InvPlot.pdf'))
 
 
-toPdf(Fisher_2D_ExploreFig(reps=5*10^4), 
-			figPath(name='Fisher_2D_ExploreFig.pdf'), width=15, height=10)
-embed_fonts(figPath(name='Fisher_2D_ExploreFig.pdf'))
+# FGM 2D Visualizations
+toPdf(Fisher_2D_ExploreFig(z=0.5, reps=5*10^4), 
+			figPath(name='Fisher_2D_ExploreFig_z0.5.pdf'), width=15, height=10)
+embed_fonts(figPath(name='Fisher_2D_ExploreFig_z0.5.pdf'))
+
+toPdf(Fisher_2D_ExploreFig(z=1, reps=5*10^4), 
+			figPath(name='Fisher_2D_ExploreFig_z1.pdf'), width=15, height=10)
+embed_fonts(figPath(name='Fisher_2D_ExploreFig_z1.pdf'))
+
+toPdf(Fisher_2D_ExploreFig(z=1.25, reps=5*10^4), 
+			figPath(name='Fisher_2D_ExploreFig_z1.25.pdf'), width=15, height=10)
+embed_fonts(figPath(name='Fisher_2D_ExploreFig_z1.25.pdf'))
+
+toPdf(Fisher_2D_ExploreFig(z=1.5, reps=5*10^4), 
+			figPath(name='Fisher_2D_ExploreFig_z1.5.pdf'), width=15, height=10)
+embed_fonts(figPath(name='Fisher_2D_ExploreFig_z1.5.pdf'))
+
+toPdf(Fisher_2D_ExploreFig(z=2, reps=5*10^4), 
+			figPath(name='Fisher_2D_ExploreFig_z2.pdf'), width=15, height=10)
+embed_fonts(figPath(name='Fisher_2D_ExploreFig_z2.pdf'))
+
+toPdf(Fisher_2D_ExploreFig(z=3, reps=5*10^4), 
+			figPath(name='Fisher_2D_ExploreFig_z3.pdf'), width=15, height=10)
+embed_fonts(figPath(name='Fisher_2D_ExploreFig_z3.pdf'))
