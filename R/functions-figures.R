@@ -22,7 +22,7 @@ figPath  <-  function(name) {
 toDev <- function(expr, dev, filename, ..., verbose=TRUE) {
   if ( verbose )
     cat(sprintf('Creating %s\n', filename))
-    dev(filename, family="Times New Roman", ...)
+    dev(filename, family="Times", ...)
 #    dev(filename, family='Arial', ...)
     on.exit(dev.off())
     eval.parent(substitute(expr))
@@ -330,8 +330,8 @@ KimuraOhta_InvPlot  <- function() {
         axis(2, las=1)
         # Plot labels etc.
         proportionalLabel(0.5,  1.05,   expression(paste("Kimura-Ohta Result")), cex=1.5, adj=c(0.5, 0.5), xpd=NA)
-        proportionalLabel(0.75,  0.78,   expression(paste("Always")), cex=1.2, adj=c(0.5, 0.5), xpd=NA)
-        proportionalLabel(0.75,  0.72,   expression(paste("Polymorphic")), cex=1.2, adj=c(0.5, 0.5), xpd=NA)
+        proportionalLabel(0.75,  0.78,   expression(paste(italic("Always"))), cex=1.2, adj=c(0.5, 0.5), xpd=NA)
+        proportionalLabel(0.75,  0.72,   expression(paste(italic("Polymorphic"))), cex=1.2, adj=c(0.5, 0.5), xpd=NA)
         proportionalLabel( 0.5, -0.2, expression(paste(italic(s[1]))), cex=1.3, adj=c(0.5, 0.5), xpd=NA)
         proportionalLabel(-0.2, 0.5,   expression(paste(italic(s[2]))), cex=1.3, adj=c(0.5, 0.5), xpd=NA, srt=90)
 
@@ -510,51 +510,75 @@ funb  <-  function(F,h) {
 # ratio of mutation size with maximal probability of balancing selection
 # for inbred relative to outcrossing populations
 relMutSizeMaxRBal  <-  function() {
-F.values = 0:99/100
-h.1 = 0.5
-h.2 = 0.25
-h.3 = 0.1
+    F.values = 0:99/100
+    h.1 = 0.5
+    h.2 = 0.25
+    h.3 = 0.1
 
-xMaxFs.1  <-  xMaxF(a = funa(F=F.values, h=h.1), b=funb(F = F.values, h = h.1))
-xMaxs.1  <-  xMax(h=h.1)
-xMaxFs.2  <-  xMaxF(a = funa(F=F.values, h=h.2), b=funb(F = F.values, h = h.2))
-xMaxs.2  <-  xMax(h=h.2)
-xMaxFs.3  <-  xMaxF(a = funa(F=F.values, h=h.3), b=funb(F = F.values, h = h.3))
-xMaxs.3  <-  xMax(h=h.3)
+    xMaxFs.1  <-  xMaxF(a = funa(F=F.values, h=h.1), b=funb(F = F.values, h = h.1))
+    xMaxs.1   <-  xMax(h=h.1)
+    xMaxFs.2  <-  xMaxF(a = funa(F=F.values, h=h.2), b=funb(F = F.values, h = h.2))
+    xMaxs.2   <-  xMax(h=h.2)
+    xMaxFs.3  <-  xMaxF(a = funa(F=F.values, h=h.3), b=funb(F = F.values, h = h.3))
+    xMaxs.3   <-  xMax(h=h.3)
 
 # ratio of mutation size with maximal probability of balancing selection
 # for inbred relative to outcrossing populations
 # pdf(file = "./notes/img/xMaxPlot.pdf",   # The directory you want to save the file in
 #     width = 6, # The width of the plot in inches
 #     height = 5) # The height of the plot in inches
-par(omi=c(0.5, 0.25, 0.25, 0.5), mar = c(5,5,1,1))
-plot((xMaxFs.1/xMaxs.1) ~ F.values, ylim=c(0, 1), type='l', lwd=2, col=colorBlindBlack8[1], ylab=expression(paste(italic(hat(x)[F]), "/", hat(x)[out])), xlab=expression(italic(F)))
-lines((xMaxFs.2/xMaxs.2) ~ F.values, ylim=c(0, 1), lwd=2, col=colorBlindBlack8[2])
-lines((xMaxFs.3/xMaxs.3) ~ F.values, ylim=c(0, 1), lwd=2, col=colorBlindBlack8[3])
-legend(
-               x       =  1,
-               y       =  0.25,
-               legend  =  c(
-                            expression(paste(italic(h), " = 1/2")),
-                            expression(paste(italic(h), " = 1/4")),
-                            expression(paste(italic(h), " = 1/10"))),
-               lty     =  1,
+    # Colors
+    colorBlindBlack8  <- c("#000000", "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7")
+
+    # 
+    par(omi=c(0.5, 0.25, 0.25, 0.5), mar = c(5,5,1,1), bty='o', xaxt='s', yaxt='s')
+    plot(NA, axes=FALSE, type='n', main='',xlim = c(0,1), ylim = c(0,1), ylab='', xlab='', cex.lab=1.2)
+        usr  <-  par('usr')
+        rect(usr[1], usr[3], usr[2], usr[4], col='white', border=NA)
+        plotGrid(lineCol='grey80')
+        box()
+        # Generate Curves
+        lines((xMaxFs.1/xMaxs.1) ~ F.values, lwd=2, col=colorBlindBlack8[1])
+        lines((xMaxFs.2/xMaxs.2) ~ F.values, lwd=2, col=colorBlindBlack8[2])
+        lines((xMaxFs.3/xMaxs.3) ~ F.values, lwd=2, col=colorBlindBlack8[3])
+        # axes
+        axis(1, las=1)
+        axis(2, las=1)
+        # Plot labels etc.
+#        proportionalLabel(0.5,  1.1,   expression(paste("Small-mutation limit (", italic(x)%->%0, ")")), cex=1.5, adj=c(0.5, 0.5), xpd=NA)        
+        proportionalLabel(-0.25,  0.5, expression(hat(italic(x))[F]/hat(italic(x))[out]), cex=1.3, adj=c(0.5, 0.5), srt=90, xpd=NA)
+        proportionalLabel( 0.5,  -0.25,  expression(paste("Inbreeding coefficient (", italic(F), ")")), cex=1.3, adj=c(0.5, 0.5), xpd=NA)
+
+        # Legend
+        legend(
+               x       =  usr[2]*0.99,
+               y       =  usr[4]*0.3,
+               legend  =  c(expression(italic(h)==1/2),
+                            expression(italic(h)==1/4),
+                            expression(italic(h)==1/10)),
+               lty     =  c(1, 1, 1),
                lwd     =  2,
                col     =  c(colorBlindBlack8[1], colorBlindBlack8[2], colorBlindBlack8[3]),
                cex     =  1,
                xjust   =  1,
                yjust   =  1,
                bty     =  'n',
-               border  =  NA,
-               xpd=NA
+               border  =  NA
                )
-
 }
 
 
 
 ###################################
 # Visualize 2-d FGM for Inbreeding
+
+InvCircle_F  <-  function(h, F, z) {
+    c  <-  ((1 - F)/(1 + F))*((1 - h)/h)*z
+#    r  <-  ((1 - F)/(1 + F))*(z/h) + (1 - (1 - F)/(1+F))*z
+
+    c(c,r)
+}
+
 
 Fisher_2D_ExploreFig <-  function(z = 1, h = 1/2, reps=10^4) {
     
@@ -585,7 +609,8 @@ Fisher_2D_ExploreFig <-  function(z = 1, h = 1/2, reps=10^4) {
                z.hom.raw.2[F == 0.2 & PosSel.out == 1], pch=21, col=transparentColor(COL8[2], opacity=0.6), bg=transparentColor(COL8[2], opacity=0.4), data=dat)
         # Analytic ranges of pos. & bal. sel.
         # draw.circle(0,0,1, lwd=1.5, border=COL8[1]) # pos. sel.
-        draw.circle(0,((1 - h)/h)*z,(z/h), lty=1, lwd=1.5, border=COL8[1]) # bal. sel.
+        InvCircle  <-  InvCircle_F(h=h, F=0.0, z=z)
+        draw.circle(0,InvCircle[1],InvCircle[2], lty=1, lwd=1.5, border=COL8[1]) # bal. sel.
         draw.circle(0,0,z, lty=2, lwd=1.5, border=COL8[1]) # bal. sel.
         points(0,0, pch=21, col=1, bg=1, cex=1.5) # Phenotypic Optimum
         points(0,-z, pch=21, col=2, bg=2, cex=1.5) # Wild-type population phenotype
@@ -612,6 +637,8 @@ Fisher_2D_ExploreFig <-  function(z = 1, h = 1/2, reps=10^4) {
                z.hom.raw.2[F == 0.2 & BalSel.F == 1], pch=21, col=transparentColor(COL8[3], opacity=0.6), bg=transparentColor(COL8[3], opacity=0.4), data=dat)
         points(z.hom.raw.1[F == 0.2 & PosSel.F == 1] ~ 
                z.hom.raw.2[F == 0.2 & PosSel.F == 1], pch=21, col=transparentColor(COL8[2], opacity=0.6), bg=transparentColor(COL8[2], opacity=0.4), data=dat)
+        InvCircle  <-  InvCircle_F(h=h, F=0.2, z=z)
+        draw.circle(0,InvCircle[1],InvCircle[2], lty=1, lwd=1.5, border=COL8[1]) # bal. sel.
         draw.circle(0,0,z, lty=2, lwd=1.5, border=COL8[1]) # bal. sel.
         points(0,0, pch=21, col=1, bg=1, cex=1.5) # Phenotypic Optimum
         points(0,-z, pch=21, col=2, bg=2, cex=1.5) # Wild-type population phenotype
@@ -635,6 +662,8 @@ Fisher_2D_ExploreFig <-  function(z = 1, h = 1/2, reps=10^4) {
         # Positive sel
         points(z.hom.raw.1[F == 0.4 & PosSel.F == 1] ~ 
                z.hom.raw.2[F == 0.4 & PosSel.F == 1], pch=21, col=transparentColor(COL8[2], opacity=0.6), bg=transparentColor(COL8[2], opacity=0.4), data=dat)
+        InvCircle  <-  InvCircle_F(h=h, F=0.4, z=z)
+        draw.circle(0,InvCircle[1],InvCircle[2], lty=1, lwd=1.5, border=COL8[1]) # bal. sel.
         draw.circle(0,0,z, lty=2, lwd=1.5, border=COL8[1]) # bal. sel.
         points(0,0, pch=21, col=1, bg=1, cex=1.5) # Phenotypic Optimum
         points(0,-z, pch=21, col=2, bg=2, cex=1.5) # Wild-type population phenotype
@@ -675,6 +704,8 @@ Fisher_2D_ExploreFig <-  function(z = 1, h = 1/2, reps=10^4) {
         # Positive sel
         points(z.hom.raw.1[F == 0.6 & PosSel.F == 1] ~ 
                z.hom.raw.2[F == 0.6 & PosSel.F == 1], pch=21, col=transparentColor(COL8[2], opacity=0.6), bg=transparentColor(COL8[2], opacity=0.4), data=dat)
+        InvCircle  <-  InvCircle_F(h=h, F=0.6, z=z)
+        draw.circle(0,InvCircle[1],InvCircle[2], lty=1, lwd=1.5, border=COL8[1]) # bal. sel.
         draw.circle(0,0,z, lty=2, lwd=1.5, border=COL8[1]) # bal. sel.
         points(0,0, pch=21, col=1, bg=1, cex=1.5) # Phenotypic Optimum
         points(0,-z, pch=21, col=2, bg=2, cex=1.5) # Wild-type population phenotype
@@ -700,6 +731,8 @@ Fisher_2D_ExploreFig <-  function(z = 1, h = 1/2, reps=10^4) {
         # Positive sel
         points(z.hom.raw.1[F == 0.8 & PosSel.F == 1] ~ 
                z.hom.raw.2[F == 0.8 & PosSel.F == 1], pch=21, col=transparentColor(COL8[2], opacity=0.6), bg=transparentColor(COL8[2], opacity=0.4), data=dat)
+        InvCircle  <-  InvCircle_F(h=h, F=0.8, z=z)
+        draw.circle(0,InvCircle[1],InvCircle[2], lty=1, lwd=1.5, border=COL8[1]) # bal. sel.
         draw.circle(0,0,z, lty=2, lwd=1.5, border=COL8[1]) # bal. sel.
         points(0,0, pch=21, col=1, bg=1, cex=1.5) # Phenotypic Optimum
         points(0,-z, pch=21, col=2, bg=2, cex=1.5) # Wild-type population phenotype
@@ -725,6 +758,8 @@ Fisher_2D_ExploreFig <-  function(z = 1, h = 1/2, reps=10^4) {
         points(z.hom.raw.1[F == 0.98 & PosSel.F == 1] ~ 
                z.hom.raw.2[F == 0.98 & PosSel.F == 1], pch=21, col=transparentColor(COL8[2], opacity=0.6), bg=transparentColor(COL8[2], opacity=0.4), data=dat)
         # Analytic ranges of pos. & bal. sel.
+        InvCircle  <-  InvCircle_F(h=h, F=0.98, z=z)
+        draw.circle(0,InvCircle[1],InvCircle[2], lty=1, lwd=1.5, border=COL8[1]) # bal. sel.
         draw.circle(0,0,z, lty=1, lwd=1.5, border=COL8[1]) # pos. sel.
         points(0,0, pch=21, col=1, bg=1, cex=1.5) # Phenotypic Optimum
         points(0,-z, pch=21, col=2, bg=2, cex=1.5) # Wild-type population phenotype

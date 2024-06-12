@@ -25,7 +25,7 @@ relBalancingMutSize_Sims  <-  function(n = 50, z = 1, F = 1/2, h = 1/2, reps=10^
 	# Phenotypic optimum at 0
 	Opt = rep(0, n) 
 	# Vector of mutation sizes
-	Fisher.x = c(0.05, seq(0.25, 5, by = 0.25))
+	Fisher.x = c(0.05, seq(0.25, 5, by = 0.5))
 	absolute.r = 2*z*Fisher.x/sqrt(n)
 
 	# Vector for output values
@@ -114,15 +114,15 @@ relBalancingSmallx_F_Sims  <-  function(n = 50, z = 1, h = 1/2, reps=10^5) {
 
 
 
-
-
+#################################################
+#################################################
 
 # Exploration of parameter space in 2-dimensions
 # showing where we get balancing selection as we
 # vary mutation size and F.
-KO_InvCond_up  <-  function(s1, S) {
-  (s1*(2 - S - 2*s1))/(S*(1 - 2*s1))
-}
+# KO_InvCond_up  <-  function(s1, S) {
+#   (s1*(2 - S - 2*s1))/(S*(1 - 2*s1))
+# }
 KO_InvCond_low  <-  function(s1, S) {
   (1/2)*(1 - sqrt(1 - S + (S^2)*(1/2 - s1)^2) - S*(1/2 - s1))
 }

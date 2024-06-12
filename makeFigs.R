@@ -55,8 +55,22 @@ toPdf(KimuraOhta_InvPlot(),
 			figPath(name='KimuraOhta_InvPlot.pdf'), width=10, height=7)
 embed_fonts(figPath(name='KimuraOhta_InvPlot.pdf'))
 
+# Ratio of mutation size with maximal probability of balancing selection
+toPdf(relMutSizeMaxRBal(), 
+			figPath(name='relMutSizeMaxRBal.pdf'), width=5, height=5)
+embed_fonts(figPath(name='relMutSizeMaxRBal.pdf'))
 
+
+
+#######################
 # FGM 2D Visualizations
+source('./R/functions-figures.R')
+Fisher_2D_ExploreFig(z=0.5, reps=5*10^4)
+
+toPdf(Fisher_2D_ExploreFig(z=0.75, reps=5*10^4), 
+			figPath(name='Fisher_2D_ExploreFig_z0.5.pdf'), width=15, height=10)
+embed_fonts(figPath(name='Fisher_2D_ExploreFig_z0.5.pdf'))
+
 toPdf(Fisher_2D_ExploreFig(z=0.5, reps=5*10^4), 
 			figPath(name='Fisher_2D_ExploreFig_z0.5.pdf'), width=15, height=10)
 embed_fonts(figPath(name='Fisher_2D_ExploreFig_z0.5.pdf'))
