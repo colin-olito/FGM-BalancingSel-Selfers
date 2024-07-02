@@ -14,6 +14,14 @@
 rm(list=ls())
 source('./R/functions-FGM-Simulations.R')
 
+######################################
+#' Create figures directories if they
+#' do not already exist
+simulationDirectoryExists  <-  dir.exists("./out")
+
+if(!simulationDirectoryExists) {
+	dir.create("./out")
+}
 
 # Established mutations, small mutation size limit
 # Panel (A) -- R_f ~ x 
