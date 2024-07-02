@@ -29,8 +29,9 @@ relBalancingMutSize_Sims  <-  function(n = 50, z = 1, F = 1/2, h = 1/2, reps=10^
 	absolute.r = 2*z*Fisher.x/sqrt(n)
 
 	# Vector for output values
-	rBal  <-  rep(0, times=length(Fisher.x))
-	for(i in 1:length(Fisher.x)){
+	rBal      <-  rep(0, times=length(Fisher.x))
+	rBal.fav  <-  rep(0, times=length(Fisher.x))
+	for(i in 1:length(Fisher.x)) {
 		# current mutation size
 		r = absolute.r[i]
 	    # random mutations
@@ -50,12 +51,21 @@ relBalancingMutSize_Sims  <-  function(n = 50, z = 1, F = 1/2, h = 1/2, reps=10^
 	    cond1    <-  as.numeric(-F*s.hom < (1 - F)*s.het)
 	    cond2    <-  as.numeric((1 - F)*s.het > s.hom)
 		PrBal.F  <-  sum((cond1 + cond2) == 2) / reps
+		## What about among selectively favoured mutations?
+	    # outcrossing
+	    PrInv     <-  sum(out.cond2 == 1) / reps
+	    fBal.fav  <-  PrBal / PrInv
+	    # inbreeding
+		PrInv.F     <-  sum(cond1 == 1) / reps
+		fBal.F.fav  <-  PrBal.F / PrInv.F
 		# Relative probability of balancing selection
 		rBal[i]  <-  PrBal.F/PrBal
+		rBal.fav[i]  <-  fBal.F.fav/fBal.fav
 	}
 
-	res.df  <-  data.frame("x" = Fisher.x,
-						   "rBal" = rBal)
+	res.df  <-  data.frame("x"         =  Fisher.x,
+						   "rBal"      =  rBal,
+						   "rBal.fav"  =  rBal.fav)
 	return(res.df)
 }
 
@@ -77,10 +87,11 @@ relBalancingSmallx_F_Sims  <-  function(n = 50, z = 1, h = 1/2, reps=10^5) {
 	absolute.r = 2*z*Fisher.x/sqrt(n)
 	r  <-  absolute.r
 	# Inbreeding values
-	F.I  <-  1:20/20
+	F.I  <-  1:11/11
 
 	# Vector for output values
-	rBal  <-  rep(0, times=length(F.I))
+	rBal      <-  rep(0, times=length(F.I))
+	rBal.fav  <-  rep(0, times=length(F.I)) 
 	# random mutations
 	muts   <-  matrix(data=rnorm(n*reps), nrow=reps, ncol=n)
 	# het-/homo-zygote phenotypes
@@ -94,6 +105,9 @@ relBalancingSmallx_F_Sims  <-  function(n = 50, z = 1, h = 1/2, reps=10^5) {
 	out.cond1  <-  as.numeric(s.hom < s.het)
 	out.cond2  <-  as.numeric(s.het > 0)
 	PrBal      <-  sum((out.cond1 + out.cond2) == 2) / reps
+	# among favored mutations
+	PrInv       <-  sum(out.cond2 == 1) / reps
+	fBal.fav   <-  PrBal / PrInv 
 	for(i in 1:length(F.I)){
 		# Inbreeding Coefficient
 		F = F.I[i]
@@ -103,15 +117,400 @@ relBalancingSmallx_F_Sims  <-  function(n = 50, z = 1, h = 1/2, reps=10^5) {
 		PrBal.F  <-  sum((cond1 + cond2) == 2) / reps
 		# Relative probability of balancing selection
 		rBal[i]  <-  PrBal.F/PrBal
+		# among favoured mutations
+		PrInv.F     <-  sum(cond2 == 1) / reps
+		fBal.F.fav  <-  PrBal.F / PrInv.F 
+		# Relative probability of balancing selection among favoured mutations
+		rBal.fav[i]  <-  fBal.F.fav/fBal.fav
 	}
 	# Output dataframe
-	res.df  <-  data.frame("F" = F.I,
-						   "rBal" = rBal)
+	res.df  <-  data.frame("F"         =  F.I,
+						   "rBal"      =  rBal,
+						   "rBal.fav"  =  rBal.fav)
 	# return results
 	return(res.df)
 }
 
 
+
+
+###############################################
+# ESABLISHED MUTATIONS
+# FGM simulations for classical weak-selection
+# approximation (i.e., high-dimensional FGM)
+###############################################
+
+pThreshold  <-  function(Ne, s, prFix) {
+	p  <-  prFix*100
+	log((100*exp(2*Ne*s))/(p + exp(2*Ne*s)))/(2*Ne*s) 
+}
+
+qHatBal.F  <-  function(F, s.het, s.hom) {
+	s_1   <-  s.het
+	s_2   <-  s.het - s.hom
+	qHat  <-  (s_1 - F*s_2) / ((1 - F)*(s_1 + s_2))
+	min(qHat, 1)
+}
+
+# Deterministic recursion
+qPrime  <-  function(q, F, s.het, s.hom) {
+	p  <-  1-q
+	(q*(q*(1-F)+F)*(1 + s.hom) + p*q*(1-F)*(1 + s.het)) / (p*(p*(1-F) + F) + 2*p*q*(1-F)*(1 + s.het) + q*(q*(1-F) + F)*(1 + s.hom) )
+}
+# Wright-Fisher Simulation for mutation establisment
+WF_sim_estab_F  <-  function(F, s.het, s.hom, Ne) {
+	# calc N
+	N  <-  round(Ne * (1+F))
+	# initial mut freq
+	q  <-  1/(2*N)
+	# BalSel Equil.
+	qHat  <-  qHatBal.F(F=F, s.het=s.het, s.hom=s.hom)
+	# Forward simulation until loss or establishment criteria is met
+	while(q > 0 && q < qHat) {
+		p           <-  1 - q
+		w.avg       <-  p*(p*(1-F) + F) + 2*p*q*(1-F)*(1 + s.het) + q*(q*(1-F) + F)*(1 + s.hom)
+		P.ij.det    <-  c(p*(p*(1-F) + F) , 2*p*q*(1-F)*(1 + s.het), q*(q*(1-F) + F)*(1 + s.hom)) / w.avg
+		P.ij.drift  <-  rmultinom(1, round(N), P.ij.det)/round(N)
+		q           <-  P.ij.drift[3] + P.ij.drift[2]/2
+	}
+	# Did mutation establish?
+	q > 0
+}
+
+
+# Relative probability of balancing selection ~ Mutation size
+# -- Simulations take a while, so output can be written as a .csv file 
+#    to subdirectory './out', or returned as an object by setting
+#    'writeFile' accordingly
+#
+# parameters
+# n = 50   --  no. dimensions
+# z = 1    --  wild-type displacement from optimum
+# h = 0.5  --  dominance
+relBalancingMutSize_EstabMuts_Sims  <-  function(Ne = 1000, n = 50, z = 1, F = 1/2, h = 1/2, reps=10^2, writeFile=FALSE) {
+
+	# Initial wild-type phenotype
+	A.wt = c(-z, rep(0, (n - 1))) 
+	# Phenotypic optimum at 0
+	Opt = rep(0, n) 
+	# Vector of mutation sizes
+	Fisher.x = c(0.05, seq(0.5, 4.5, by = 0.5))
+	absolute.r = 2*z*Fisher.x/sqrt(n)
+	# Vector for output values
+	rBal.est  <-  rep(0, times=length(Fisher.x))
+	# loop over mutation sizes
+	for(i in 1:length(Fisher.x)) {
+		# current mutation size
+		r = absolute.r[i]
+
+		## For outcrossing
+		# vector for selection coefficients
+		s.het.est  <-  rep(0, times=reps)
+		s.hom.est  <-  rep(0, times=reps)
+	    # counter
+	    estCount  <-  0
+	    while(estCount < reps) {
+			# random mutations
+			mut    <-  rnorm(n)
+			# het-/homo-zygote phenotypes
+			z.het  <-  sqrt(sum((A.wt + r*h*mut/sqrt(sum(mut^2)) - Opt)^2))
+			z.hom  <-  sqrt(sum((A.wt + r*mut/sqrt(sum(mut^2)) - Opt)^2))
+			# het-/homo-zygote selection coefficients
+			s.het  <-  exp(-0.5*z.het^2)/exp(-0.5*z^2) - 1
+			s.hom  <-  exp(-0.5*z.hom^2)/exp(-0.5*z^2) - 1
+			# is mutation favoured?
+			if(s.het > 0) {
+				# Does mutation establish?
+				mutEstablishes       <-  WF_sim_estab_F(F = 0, s.het = s.het, s.hom = s.hom, Ne = Ne)
+				# if mut establishes, record sel. coeffs.
+				if(mutEstablishes) {
+					estCount             <-  estCount + as.numeric(mutEstablishes)
+					s.het.est[estCount]  <-  s.het
+					s.hom.est[estCount]  <-  s.hom
+				cat('\r', paste(100*(estCount/reps),'% Complete'))					
+				}
+			}
+	    }
+	    # Do selection coefficients result in balancing selection
+		# among established mutations?
+	    # outcrossing
+		out.cond1  <-  as.numeric(s.hom.est < s.het.est)
+		out.cond2  <-  as.numeric(s.het.est > 0)
+	    fBal.est  <-  sum((out.cond1 + out.cond2) == 2) /reps
+#browser()		
+		## For Inbreeding
+		# vector for selection coefficients
+		s.het.est  <-  rep(0, times=reps)
+		s.hom.est  <-  rep(0, times=reps)
+	    # counter
+	    estCount  <-  0
+	    while(estCount < reps) {
+			# random mutations
+			mut   <-  rnorm(n)
+			# het-/homo-zygote phenotypes
+			z.het  <-  sqrt(sum((A.wt + r*h*mut/sqrt(sum(mut^2)) - Opt)^2))
+			z.hom  <-  sqrt(sum((A.wt + r*mut/sqrt(sum(mut^2)) - Opt)^2))
+			# het-/homo-zygote selection coefficients
+			s.het  <-  exp(-0.5*z.het^2)/exp(-0.5*z^2) - 1
+			s.hom  <-  exp(-0.5*z.hom^2)/exp(-0.5*z^2) - 1
+			# is mutation favoured?
+			if(-F*s.hom < (1 - F)*s.het) {
+				# Does mutation establish?
+				mutEstablishes       <-  WF_sim_estab_F(F = F, s.het = s.het, s.hom = s.hom, Ne = Ne)
+				# if mut establishes, record sel. coeffs.
+				if(mutEstablishes == 1) {
+					estCount             <-  estCount + as.numeric(mutEstablishes)
+					s.het.est[estCount]  <-  s.het
+					s.hom.est[estCount]  <-  s.hom
+				cat('\r', paste(100*(estCount/reps),'% Complete'))					
+				}
+			}
+	    }
+	    cond1       <-  as.numeric(-F*s.hom.est < (1 - F)*s.het.est)
+	    cond2       <-  as.numeric((1 - F)*s.het.est > s.hom.est)
+		fBal.F.est  <-  sum((cond1 + cond2) == 2) / reps
+
+		# Relative probability of balancing selection
+		rBal.est[i]  <-  fBal.F.est/fBal.est
+#browser()
+print(paste('mut. size ', i, "/", length(Fisher.x)))
+	}
+ 
+	# results
+	res.df  <-  data.frame("x"         =  Fisher.x,
+						   "rBal.est"  =  rBal.est)
+
+	# export data as .csv to ./out
+	if(writeFile) {
+			filename <-  paste("./out/relBal_smallMut_EstabMuts", "_Ne", Ne, "_F", F, "_n", n, "_z", z, "_h", h, "_reps", sim.reps, ".csv", sep="")
+			write.csv(res.df, file=filename, row.names = FALSE)
+	} else{
+			# return dataframe
+			return(res.df)
+	}
+
+}
+
+
+# Relative probability of balancing selection ~ Inbreeding Coefficient (F)
+# Infinitesimal mutation size limit
+# -- Simulations take a while, so output can be written as a .csv file 
+#    to subdirectory './out', or returned as an object by setting
+#    'writeFile' accordingly
+#
+# parameters
+# n = 50   --  no. dimensions
+# z = 1    --  wild-type displacement from optimum
+# h = 0.5  --  dominance
+relBalancingSmallx_EstabMuts_F_Sims  <-  function(Ne = 1000, n = 50, z = 1, h = 1/2, reps=10^2, writeFile=FALSE) {
+
+	# Initial wild-type phenotype
+	A.wt = c(-z, rep(0, (n - 1))) 
+	# Phenotypic optimum at 0
+	Opt = rep(0, n) 
+	# Mutation size
+	Fisher.x = 0.05
+	absolute.r = 2*z*Fisher.x/sqrt(n)
+	r  <-  absolute.r
+	# Inbreeding values
+	F.I  <-  0:10/10
+	# Vector for output values
+	fBal.F.est  <-  rep(0, times=length(F.I)) 
+	# loop over inbreeding coefficients
+	for(i in 1:length(F.I)){
+		# Inbreeding Coefficient
+		F = F.I[i]
+
+		# vector for selection coefficients
+		s.het.est  <-  rep(0, times=reps)
+		s.hom.est  <-  rep(0, times=reps)
+	    # counter
+	    estCount  <-  0
+	    while(estCount < reps) {
+			# random mutations
+			mut   <-  rnorm(n)
+			# het-/homo-zygote phenotypes
+			z.het  <-  sqrt(sum((A.wt + r*h*mut/sqrt(sum(mut^2)) - Opt)^2))
+			z.hom  <-  sqrt(sum((A.wt + r*mut/sqrt(sum(mut^2)) - Opt)^2))
+			# het-/homo-zygote selection coefficients
+			s.het  <-  exp(-0.5*z.het^2)/exp(-0.5*z^2) - 1
+			s.hom  <-  exp(-0.5*z.hom^2)/exp(-0.5*z^2) - 1
+			# is mutation favoured?
+			if(-F*s.hom < (1 - F)*s.het) {
+				# Does mutation establish?
+				mutEstablishes       <-  WF_sim_estab_F(F = F, s.het = s.het, s.hom = s.hom, Ne = Ne)
+				# if mut establishes, record sel. coeffs.
+				if(mutEstablishes == 1) {
+					estCount             <-  estCount + as.numeric(mutEstablishes)
+					s.het.est[estCount]  <-  s.het
+					s.hom.est[estCount]  <-  s.hom
+				cat('\r', paste(100*(estCount/reps),'% Complete'))					
+				}
+			}
+	    }
+	    cond1       <-  as.numeric(-F*s.hom.est < (1 - F)*s.het.est)
+	    cond2       <-  as.numeric((1 - F)*s.het.est > s.hom.est)
+		fBal.F.est[i]  <-  sum((cond1 + cond2) == 2) / reps
+
+print(paste('Inbreeding Coefficient ', i, "/", length(F.I)))
+	}
+#browser()
+	# Relative probability of balancing selection
+	rBal.est  <-  fBal.F.est/fBal.F.est[1]
+	# Output dataframe
+	res.df  <-  data.frame("F"         =  F.I,
+						   "rBal.est"  =  rBal.est)
+
+	# export data as .csv to ./out
+	if(writeFile) {
+			filename <-  paste("./out/relBal_smallMut_F_EstabMuts", "_Ne", Ne, "_n", n, "_z", z, "_h", h, "_reps", sim.reps, ".csv", sep="")
+			write.csv(res.df, file=filename, row.names = FALSE)
+	} else{
+			# return dataframe
+			return(res.df)
+	}
+}
+
+
+
+# Relative probability of balancing selection ~ Inbreeding Coefficient (F)
+# Variable mutation size
+# -- Simulations take a while, so output can be written as a .csv file 
+#    to subdirectory './out', or returned as an object by setting
+#    'writeFile' accordingly
+#
+# parameters
+# n = 50   --  no. dimensions
+# z = 1    --  wild-type displacement from optimum
+# h = 0.5  --  dominance
+relBalancingMutSize_variable_x_EstabMuts_Sims  <-  function(Ne = 1000, n = 50, z = 1, h = 1/2, sim.reps=10^2, writeFile = FALSE) {
+
+	# reps for new & favoured mutations
+	reps  <-  10^5
+	# Initial wild-type phenotype
+	A.wt = c(-z, rep(0, (n - 1))) 
+	# Phenotypic optimum at 0
+	Opt = rep(0, n) 
+
+	### New & Favoured Mutations ###
+	# Mutation size
+	Fisher.x = runif(min=0, max=5, n = reps)
+	absolute.r = 2*z*Fisher.x/sqrt(n)
+	r  <-  absolute.r
+	# Inbreeding values
+	F.I  <-  0:10/10
+
+	# Vector for output values
+	rBal.new  <-  rep(0, times=length(F.I))
+	rBal.fav  <-  rep(0, times=length(F.I)) 
+	# random mutations
+	muts   <-  matrix(data=rnorm(n*reps), nrow=reps, ncol=n)
+	# het-/homo-zygote phenotypes
+	z.het  <-  rep(0, times=reps)
+	z.hom  <-  rep(0, times=reps)	
+		for(j in 1:reps) {
+			z.het[j]      <-  sqrt(sum((A.wt + r[j]*h*muts[j,]/sqrt(sum(muts[j,]^2)) - Opt)^2))
+			z.hom[j]      <-  sqrt(sum((A.wt + r[j]*muts[j,]/sqrt(sum(muts[j,]^2)) - Opt)^2))
+		}
+	# het-/homo-zygote selection coefficients
+	s.het  <-  exp(-0.5*z.het^2)/exp(-0.5*z^2) - 1
+	s.hom  <-  exp(-0.5*z.hom^2)/exp(-0.5*z^2) - 1
+	# Do selection coefficients result in balancing selection?
+	# outcrossing
+	out.cond1  <-  as.numeric(s.hom < s.het)
+	out.cond2  <-  as.numeric(s.het > 0)
+	PrBal      <-  sum((out.cond1 + out.cond2) == 2) / reps
+	# among favored mutations
+	PrInv       <-  sum(out.cond2 == 1) / reps
+	fBal.fav   <-  PrBal / PrInv 
+	for(i in 1:length(F.I)){
+		# Inbreeding Coefficient
+		F = F.I[i]
+	    # inbreeding
+	    cond1    <-  as.numeric(-F*s.hom < (1 - F)*s.het)
+	    cond2    <-  as.numeric((1 - F)*s.het > s.hom)
+		PrBal.F  <-  sum((cond1 + cond2) == 2) / reps
+		# Relative probability of balancing selection
+		rBal.new[i]  <-  PrBal.F/PrBal
+		# among favoured mutations
+		PrInv.F     <-  sum(cond1 == 1) / reps
+		fBal.F.fav  <-  PrBal.F / PrInv.F 
+		# Relative probability of balancing selection among favoured mutations
+		rBal.fav[i]  <-  fBal.F.fav/fBal.fav
+	}
+
+	### Established Mutations ###
+	reps  <-  sim.reps
+	# Vector for output values
+	fBal.F.est  <-  rep(0, times=length(F.I)) 
+	# loop over inbreeding coefficients
+	for(i in 1:length(F.I)){
+		# Inbreeding Coefficient
+		F = F.I[i]
+
+		# vector for selection coefficients
+		s.het.est  <-  rep(0, times=reps)
+		s.hom.est  <-  rep(0, times=reps)
+
+	    # counter
+	    estCount  <-  0
+	    while(estCount < reps) {
+
+			# Mutation size
+			Fisher.x = runif(n=1, min=0, max=5)
+			absolute.r = 2*z*Fisher.x/sqrt(n)
+			r  <-  absolute.r
+
+			# random mutations
+			mut   <-  rnorm(n)
+			# het-/homo-zygote phenotypes
+			z.het  <-  sqrt(sum((A.wt + r*h*mut/sqrt(sum(mut^2)) - Opt)^2))
+			z.hom  <-  sqrt(sum((A.wt + r*mut/sqrt(sum(mut^2)) - Opt)^2))
+			# het-/homo-zygote selection coefficients
+			s.het  <-  exp(-0.5*z.het^2)/exp(-0.5*z^2) - 1
+			s.hom  <-  exp(-0.5*z.hom^2)/exp(-0.5*z^2) - 1
+			# is mutation favoured?
+			if(-F*s.hom < (1 - F)*s.het) {
+				# Does mutation establish?
+				mutEstablishes       <-  WF_sim_estab_F(F = F, s.het = s.het, s.hom = s.hom, Ne = Ne)
+				# if mut establishes, record sel. coeffs.
+				if(mutEstablishes == 1) {
+					estCount             <-  estCount + as.numeric(mutEstablishes)
+					s.het.est[estCount]  <-  s.het
+					s.hom.est[estCount]  <-  s.hom
+				cat('\r', paste(100*(estCount/reps),'% Complete'))					
+				}
+			}
+	    }
+	    cond1       <-  as.numeric(-F*s.hom.est < (1 - F)*s.het.est)
+	    cond2       <-  as.numeric((1 - F)*s.het.est > s.hom.est)
+		fBal.F.est[i]  <-  sum((cond1 + cond2) == 2) / reps
+
+print(paste('Inbreeding Coefficient ', i, "/", length(F.I)))
+	}
+
+	# Relative probability of balancing selection
+	rBal.est  <-  fBal.F.est/fBal.F.est[1]
+
+	# Output dataframe
+	res.df  <-  data.frame("F"         =  F.I,
+						   "rBal.new"  =  rBal.new,
+						   "rBal.fav"  =  rBal.fav,
+						   "rBal.est"  =  rBal.est)
+	
+	# export data as .csv to ./out
+	if(writeFile) {
+			filename <-  paste("./out/relBal_variable_x_EstabMuts", "_Ne", Ne, "_n", n, "_z", z, "_h", h, "_reps", sim.reps, ".csv", sep="")
+			write.csv(res.df, file=filename, row.names = FALSE)
+	} else{
+			# return dataframe
+			return(res.df)
+	}
+
+}
+
+
+########### CONTINUE EDITING HERE ###########
 
 
 #################################################

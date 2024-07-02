@@ -44,11 +44,30 @@ toPdf(classicParamSpaceFig(),
 			figPath(name='classicParamSpaceFig.pdf'), width=10, height=7)
 embed_fonts(figPath(name='classicParamSpaceFig.pdf'))
 
-# Relative proporiton of parameter space resulting in
-# balancing selection. Weak-selection classical results.
-toPdf(RelBalancingFig(), 
-			figPath(name='RelBalancingFig.pdf'), width=10, height=7)
-embed_fonts(figPath(name='RelBalancingFig.pdf'))
+# Relative proportion of parameter space resulting in
+# balancing selection for: 
+# 	(1) all mutations
+#   (2) Favored mutations
+toPdf(RelBalancingFig(favouredMuts=FALSE), 
+			figPath(name='RelBalancingFig-AllMuts.pdf'), width=10, height=8)
+embed_fonts(figPath(name='RelBalancingFig-AllMuts.pdf'))
+
+toPdf(RelBalancingFig(favouredMuts=TRUE), 
+			figPath(name='RelBalancingFig-FavMuts.pdf'), width=10, height=8)
+embed_fonts(figPath(name='RelBalancingFig-FavMuts.pdf'))
+
+# Relative proportion of parameter space resulting in
+# balancing selection for established mutations.
+toPdf(RelBalancingEstablishedFig(), 
+			figPath(name='RelBalancingFig-EstMuts.pdf'), width=10, height=8)
+embed_fonts(figPath(name='RelBalancingFig-EstMuts.pdf'))
+
+
+# rm(list=ls())
+# source('./R/functions-figures.R')
+# source('./R/functions-FGM-Simulations.R')
+# RelBalancingEstablishedFig()
+
 
 # Kimura-Ohta invasion plot for arbitrary selection strength
 toPdf(KimuraOhta_InvPlot(), 

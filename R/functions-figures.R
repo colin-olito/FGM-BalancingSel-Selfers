@@ -343,7 +343,6 @@ KimuraOhta_InvPlot  <- function() {
 # 1 - F in red
 
 # Ancillary functions for this figure
-# Functions for 
 Pr.inv.F  <-  function(x, F.I, h){
   b  <-  (F.I + (1 - F.I)*h^2)/(F.I + (1 - F.I)*h)
   1 - pnorm(x*b)
@@ -375,8 +374,9 @@ rBal_smallMutLimit  <-  function(F.I, h){
     (1 - F.I)*h*(1 - h)*(1/(1 - (1 - F.I)*h) + 1/(F.I + (1 - F.I)*h))
 }
 
+
 # Ratio of inbred/outcross balancing selection
-RelBalancingFig  <-  function(F.I = 1/2, h=1/2) {
+RelBalancingFig  <-  function(F.I = 1/2, h=1/2, favouredMuts = FALSE) {
     
     # mutation size
     sizes  <-  1:1000/200
@@ -391,20 +391,29 @@ RelBalancingFig  <-  function(F.I = 1/2, h=1/2) {
     # Generate Plot
     par(omi=c(0.5, 0.5, 0.5, 0.5), mar = c(4,4,4,1), bty='o', xaxt='s', yaxt='s')
      # Panel (A) Ratio of Balancing selection for inbreeding to outcrossing
-     plot(NA, axes=FALSE, type='n', main='',xlim = c(0,5), ylim = c(0,0.7), ylab='', xlab='', cex.lab=1.2)
+     if(favouredMuts) { yMax  <-  1.2} 
+        else (yMax  <-  0.7)
+     plot(NA, axes=FALSE, type='n', main='',xlim = c(0,5), ylim = c(0,yMax), ylab='', xlab='', cex.lab=1.2)
         usr  <-  par('usr')
         rect(usr[1], usr[3], usr[2], usr[4], col='white', border=NA)
         plotGrid(lineCol='grey80')
         box()
         # Generate Curves
-        Rbal     <-  Pr.bal.F(x=sizes, F.I=F.I, h=h)/Pr.bal(x=sizes, h=h)
+        if(favouredMuts) {
+                Rbal     <-  (Pr.bal.F(x=sizes, F.I=F.I, h=h) / Pr.inv.F(x=sizes, F.I=F.I, h=h)) / (Pr.bal.F(x=sizes, F.I=0, h=h) / Pr.inv.F(x=sizes, F.I=0, h=h))
+        } else{ Rbal     <-  Pr.bal.F(x=sizes, F.I=F.I, h=h)/Pr.bal(x=sizes, h=h) }
+        RbalLim  <-  rBal_smallMutLimit(F.I=F.I, h=h)
         RbalLim  <-  rBal_smallMutLimit(F.I=F.I, h=h)
         lines(Rbal ~ sizes,  col = "grey60", lwd = 3)
         lines(rep(1 - F.I, length(sizes)) ~ sizes, lwd = 3)
         lines(rep(RbalLim, length(sizes)) ~ sizes, lty = 3, lwd = 3)
         # Simulations
-        RbalSim  <-  relBalancingMutSize_Sims()
-        points(rBal ~ x, pch=21, col=transparentColor(colorBlindBlack8[1], opacity=0.6), bg=transparentColor(colorBlindBlack8[1], opacity=0.4), data=RbalSim)
+            RbalSim  <-  relBalancingMutSize_Sims()
+        if(favouredMuts) {
+            points(rBal.fav ~ x, pch=21, col=transparentColor(colorBlindBlack8[1], opacity=0.6), bg=transparentColor(colorBlindBlack8[1], opacity=0.4), data=RbalSim)
+            } else {
+            points(rBal ~ x, pch=21, col=transparentColor(colorBlindBlack8[1], opacity=0.6), bg=transparentColor(colorBlindBlack8[1], opacity=0.4), data=RbalSim)
+        }
         # axes
         axis(1, las=1)
         axis(2, las=1)
@@ -460,9 +469,15 @@ RelBalancingFig  <-  function(F.I = 1/2, h=1/2) {
         RbalSim_h1  <-  relBalancingSmallx_F_Sims(h=1/2)
         RbalSim_h2  <-  relBalancingSmallx_F_Sims(h=1/4)
         RbalSim_h3  <-  relBalancingSmallx_F_Sims(h=1/10)
-        points(rBal ~ F, pch=21, col=transparentColor(colorBlindBlack8[2], opacity=0.6), bg=transparentColor(colorBlindBlack8[2], opacity=0.4), data=RbalSim_h1)
-        points(rBal ~ F, pch=21, col=transparentColor(colorBlindBlack8[3], opacity=0.6), bg=transparentColor(colorBlindBlack8[3], opacity=0.4), data=RbalSim_h2)
-        points(rBal ~ F, pch=21, col=transparentColor(colorBlindBlack8[4], opacity=0.6), bg=transparentColor(colorBlindBlack8[4], opacity=0.4), data=RbalSim_h3)
+        if(favouredMuts) {
+            points(rBal.fav ~ F, pch=21, col=transparentColor(colorBlindBlack8[2], opacity=0.6), bg=transparentColor(colorBlindBlack8[2], opacity=0.4), data=RbalSim_h1)
+            points(rBal.fav ~ F, pch=21, col=transparentColor(colorBlindBlack8[3], opacity=0.6), bg=transparentColor(colorBlindBlack8[3], opacity=0.4), data=RbalSim_h2)
+            points(rBal.fav ~ F, pch=21, col=transparentColor(colorBlindBlack8[4], opacity=0.6), bg=transparentColor(colorBlindBlack8[4], opacity=0.4), data=RbalSim_h3)
+            } else {
+            points(rBal ~ F, pch=21, col=transparentColor(colorBlindBlack8[2], opacity=0.6), bg=transparentColor(colorBlindBlack8[2], opacity=0.4), data=RbalSim_h1)
+            points(rBal ~ F, pch=21, col=transparentColor(colorBlindBlack8[3], opacity=0.6), bg=transparentColor(colorBlindBlack8[3], opacity=0.4), data=RbalSim_h2)
+            points(rBal ~ F, pch=21, col=transparentColor(colorBlindBlack8[4], opacity=0.6), bg=transparentColor(colorBlindBlack8[4], opacity=0.4), data=RbalSim_h3)
+        }
         # axes
         axis(1, las=1)
         axis(2, labels=NA)
@@ -491,8 +506,11 @@ RelBalancingFig  <-  function(F.I = 1/2, h=1/2) {
 
 
 ######################################
+# Fig showing the ratio of mutation size
+# with maximal probability of balancing selection
+# for inbred relative to outcrossing populations
+
 # Ancillary functions for this figure
-# Functions for 
 xMaxF  <- function(a,b){
   sqrt(2*log(a/b)/(a^2 - b^2))
 }
@@ -522,11 +540,6 @@ relMutSizeMaxRBal  <-  function() {
     xMaxFs.3  <-  xMaxF(a = funa(F=F.values, h=h.3), b=funb(F = F.values, h = h.3))
     xMaxs.3   <-  xMax(h=h.3)
 
-# ratio of mutation size with maximal probability of balancing selection
-# for inbred relative to outcrossing populations
-# pdf(file = "./notes/img/xMaxPlot.pdf",   # The directory you want to save the file in
-#     width = 6, # The width of the plot in inches
-#     height = 5) # The height of the plot in inches
     # Colors
     colorBlindBlack8  <- c("#000000", "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7")
 
@@ -569,6 +582,276 @@ relMutSizeMaxRBal  <-  function() {
 
 
 
+
+
+################################################################
+# Balancing selection in mutations that become established in
+# the population
+
+# Ancillary functions for this figure
+Pr.est.F = function(x, F.I, z = 1, n = 50){
+  z^2/n*x*(sqrt(2)*(1 + F.I)/sqrt(pi)*exp(-x^2/2*(1 + 3*F.I)^2/(2*(1 + F.I))^2) - x*(1 + 3*F.I)/2*(1 - erf(x*(1 + 3*F.I)/(2*sqrt(2)*(1 + F.I)))))
+}
+
+Pr.fix.F = function(x, F.I, z = 1, n = 50){
+  z^2/n*x*(sqrt(2)*(1 + F.I)/sqrt(pi)*exp(-x^2/2*(3 + 1*F.I)^2/(2*(1 + F.I))^2) - x*(1 + 3*F.I)/2*(1 - erf(x*(3 + 1*F.I)/(2*sqrt(2)*(1 + F.I)))))
+}
+
+Pr.bal.F = function(x, F.I, z = 1, n = 50){
+  z^2/n*x*(sqrt(2)*(1 + F.I)/sqrt(pi)*exp(-x^2/2*(1 + 3*F.I)^2/(2*(1 + F.I))^2) - x*(1 + 3*F.I)/2*(1 - erf(x*(1 + 3*F.I)/(2*sqrt(2)*(1 + F.I))))) - z^2/n*x*(sqrt(2)*(1 + F.I)/sqrt(pi)*exp(-x^2/2*(3 + 1*F.I)^2/(2*(1 + F.I))^2) - x*(1 + 3*F.I)/2*(1 - erf(x*(3 + 1*F.I)/(2*sqrt(2)*(1 + F.I)))))
+}
+
+Pr.est = function(x, z = 1, n = 50){
+  z^2/n*x*(sqrt(2)/sqrt(pi)*exp(-x^2/8) - x/2*(1 - erf(x/(2*sqrt(2)))))
+}
+
+Pr.fix = function(x, z = 1, n = 50){
+  z^2/n*x*(sqrt(2)/sqrt(pi)*exp(-9*x^2/8) - x/2*(1 - erf(3*x/(2*sqrt(2)))))
+}
+
+Pr.bal = function(x, z = 1, n = 50){
+  z^2/n*x*(sqrt(2)/sqrt(pi)*exp(-x^2/8) - x/2*(1 - erf(x/(2*sqrt(2))))) - z^2/n*x*(sqrt(2)/sqrt(pi)*exp(-9*x^2/8) - x/2*(1 - erf(3*x/(2*sqrt(2)))))
+}
+
+
+
+# Ratio of inbred/outcross balancing selection
+RelBalancingEstablishedFig  <-  function(F.I = 1/2, h=1/2, Ne = 10^4) {
+    
+    # mutation size
+    sizes  <-  1:1000/200
+
+    # Colors
+    colorBlindBlack8  <- c("#000000", "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7")
+
+    # set plot layout
+    layout.mat  <-  matrix(c(1,2), nrow=1, ncol=2, byrow=TRUE)
+    layout      <-  layout(layout.mat,respect=TRUE)
+
+    # Generate Plot
+    par(omi=c(0.5, 0.5, 0.5, 0.5), mar = c(4,4,4,1), bty='o', xaxt='s', yaxt='s')
+     # Panel (A) Ratio of Balancing selection for inbreeding to outcrossing
+     plot(NA, axes=FALSE, type='n', main='',xlim = c(0,5), ylim = c(0,1.2), ylab='', xlab='', cex.lab=1.2)
+        usr  <-  par('usr')
+        rect(usr[1], usr[3], usr[2], usr[4], col='white', border=NA)
+        plotGrid(lineCol='grey80')
+        box()
+        # Generate Curves
+            Rbal     <-  (Pr.bal.F(x = sizes, F.I = F.I)/Pr.est.F(x = sizes, F.I = F.I))/(Pr.bal(sizes)/Pr.est(sizes))
+            lines(Rbal ~ sizes,  col = "grey60", lwd = 3)
+            lines(rep(1 - F.I, length(sizes)) ~ sizes, lwd = 3)
+            lines(rep(((1 - F.I)/(1 + F.I)), length(sizes)) ~ sizes, lty = 3, lwd = 3)
+            lines(rep((1 - F.I)^2/(1 + F.I)^2, length(sizes))~ sizes, lty = 3, , lwd = 3, col = "grey60")
+        # Simulations
+        RbalSim  <-  read.csv("./out/relBal_smallMut_EstabMuts_Ne10e5_F0.5_n50_z1_h0.5_reps10e5.csv")
+#            RbalSim  <-  relBalancingMutSize_EstabMuts_Sims(F = F.I, Ne=Ne, reps=5*10^3)
+            points(rBal.est ~ x, pch=21, col=transparentColor(colorBlindBlack8[1], opacity=0.6), bg=transparentColor(colorBlindBlack8[1], opacity=0.4), data=RbalSim)
+        # axes
+        axis(1, las=1)
+        axis(2, las=1)
+        # Plot labels etc.
+        proportionalLabel(0.5,  1.1,   expression(paste(italic(F), " = ", italic(h), " = ", 1/2)), cex=1.5, adj=c(0.5, 0.5), xpd=NA)        
+        proportionalLabel(-0.25,  0.5,  expression(paste("Relative fraction (", italic(R[f]), ")")), cex=1.3, adj=c(0.5, 0.5), xpd=NA, srt=90)        
+        proportionalLabel( 0.5,  -0.25, expression(paste("Mutation size (", italic(x), ")")), cex=1.3, adj=c(0.5, 0.5), xpd=NA)        
+        # Legend
+        legend(
+               x       =  usr[2]*0.35,
+               y       =  usr[4]*0.99,
+               legend  =  c(expression(paste(1-italic(F))),
+                            expression(paste(Eq(4))),
+                            expression(paste(Eq(5))),
+                            expression(paste(Eq(6)))),
+               lty     =  c(1, 3, 1, 3),
+               lwd     =  3,
+               col     =  c(colorBlindBlack8[1], colorBlindBlack8[1], "grey60", "grey60"),
+               cex     =  1,
+               xjust   =  1,
+               yjust   =  1,
+               bty     =  'n',
+               border  =  NA
+               )
+        # Legend
+        legend(
+               x       =  usr[2]*0.7,
+               y       =  usr[4]*0.99,
+               legend  =  c(expression(paste("Simulations"))),
+               pch     =  21,
+               pt.bg   =  transparentColor(colorBlindBlack8[1], opacity=0.4),
+               col     =  transparentColor(colorBlindBlack8[1], opacity=0.6),
+               cex     =  1,
+               xjust   =  1,
+               yjust   =  1,
+               bty     =  'n',
+               border  =  NA
+               )
+
+    # Panel (B) Proportion of parameter space where balancing selection occurs
+    F.values = 0:100/100
+    plot(NA, axes=FALSE, type='n', main='',xlim = c(0,1), ylim = c(0,1), ylab='', xlab='', cex.lab=1.2)
+        usr  <-  par('usr')
+        rect(usr[1], usr[3], usr[2], usr[4], col='white', border=NA)
+        plotGrid(lineCol='grey80')
+        box()
+        # Generate Lines + points
+            lines((1 - F.values) ~ F.values, col = colorBlindBlack8[1], lwd = 3)
+            lines(F.values, (1 - F.values)/(1 + F.values), lty = 3, lwd = 2, col = colorBlindBlack8[1])
+            lines(F.values, (1 - F.values)^2/(1 + F.values)^2, lty = 3, lwd = 2, col = "grey60")
+        # Simulations
+            RbalSim.F  <-  read.csv("./out/relBal_smallMut_F_EstabMuts_Ne10e5_n50_z1_h0.5_reps10e5.csv", header=TRUE)
+#            RbalSim.F  <-  relBalancingSmallx_EstabMuts_F_Sims(h=1/2, Ne=Ne, reps=10^5)
+            points(rBal.est ~ F, pch=21, col=transparentColor(colorBlindBlack8[1], opacity=0.6), bg=transparentColor(colorBlindBlack8[1], opacity=0.4), data=RbalSim.F)
+        # axes
+        axis(1, las=1)
+        axis(2, labels=NA)
+        # Plot labels etc.
+        proportionalLabel(0.5,  1.1,   expression(paste("Small-mutation limit (", italic(x)%->%0, ")")), cex=1.5, adj=c(0.5, 0.5), xpd=NA)        
+        proportionalLabel( 0.5,  -0.25,  expression(paste("Inbreeding coefficient (", italic(F), ")")), cex=1.3, adj=c(0.5, 0.5), xpd=NA)
+        # Legend
+#        legend(
+#               x       =  usr[2]*0.99,
+#               y       =  usr[4]*0.99,
+#               legend  =  c(expression(paste(1-italic(F))),
+#                            expression(paste(Eq(17), "; ", italic(h)==1/2)),
+#                            expression(paste(Eq(17), "; ", italic(h)==1/4)),
+#                            expression(paste(Eq(17), "; ", italic(h)==1/10))),
+#               lty     =  1,
+#               lwd     =  3,
+#               col     =  c(colorBlindBlack8[1], colorBlindBlack8[2], colorBlindBlack8[3], colorBlindBlack8[4]),
+#               cex     =  1,
+#               xjust   =  1,
+#               yjust   =  1,
+#               bty     =  'n',
+#               border  =  NA
+#               )
+
+}
+
+
+
+
+
+################################################################
+# Summary Figure showing small & large mutation size results
+# for the relative fraction of favored and established mutations
+# under balancing selection
+
+# Ancillary functions for this figure
+
+relBal_largex_fav  <-  function(F) {
+    (3*(1 - F^2)) / ((1 + F)*(3 + F))
+}
+
+relBal_largex_est  <-  function(F) {
+    (27* (1 - F)^2 * (7*F + 5)) / (5*(3 + F)^3 )
+}
+
+
+# Summary Figure for ratio of inbred/outcross balancing selection
+RelBalancing_SummaryFig  <-  function(h=1/2, Ne = 10^4, sim.reps=10^3) {
+    
+    # Inbreeding values
+    F.values = 0:100/100
+
+    # Colors
+    colorBlindBlack8  <- c("#000000", "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7")
+
+    # set plot layout
+    layout.mat  <-  matrix(1, nrow=1, ncol=1, byrow=TRUE)
+    layout      <-  layout(layout.mat,respect=TRUE)
+
+    # Generate Plot
+    par(omi=c(0.5, 0.5, 0.5, 0.5), mar = c(4,4,4,1), bty='o', xaxt='s', yaxt='s')
+     # Ratio of Balancing selection for inbreeding to outcrossing
+     plot(NA, axes=FALSE, type='n', main='',xlim = c(0,1), ylim = c(0,1.1), ylab='', xlab='', cex.lab=1.2)
+        usr  <-  par('usr')
+        rect(usr[1], usr[3], usr[2], usr[4], col='white', border=NA)
+        plotGrid(lineCol='grey80')
+        box()
+        # Generate Curves
+            lines((1 - F.values) ~ F.values, col = colorBlindBlack8[1], lwd = 3)
+            # Favoured mutations
+            lines(rBal_smallMutLimit(F.I=F.values, h=1/2) ~ F.values, lty = 3, lwd = 2, col = colorBlindBlack8[2])
+            lines(relBal_largex_fav(F=F.values) ~ F.values, lty = 2, lwd = 2, col = colorBlindBlack8[2])
+            # Established mutations
+            lines(((1 - F.values)^2/(1 + F.values)^2) ~ F.values, lty = 3, lwd = 2, col = colorBlindBlack8[3])
+            lines(relBal_largex_est(F=F.values) ~ F.values, lty = 2, lwd = 2, col = colorBlindBlack8[3])
+        # Simulations
+            RbalSim.F  <-  read.csv("./out/relBal_variable_x_EstabMuts_Ne10e5_n50_z1_h0.5_reps10e5.csv", header=TRUE)
+#            RbalSim.F  <-  relBalancingMutSize_variable_x_EstabMuts_Sims(h=1/2, sim.reps=sim.reps)
+#            points(rBal.new ~ F, pch=21, col=transparentColor(colorBlindBlack8[2], opacity=0.9), bg=transparentColor(colorBlindBlack8[2], opacity=0.4), data=RbalSim.F)
+            points(rBal.fav ~ F, pch=21, col=transparentColor(colorBlindBlack8[2], opacity=0.9), bg=transparentColor(colorBlindBlack8[2], opacity=0.4), data=RbalSim.F)
+            points(rBal.est ~ F, pch=21, col=transparentColor(colorBlindBlack8[3], opacity=0.9), bg=transparentColor(colorBlindBlack8[3], opacity=0.4), data=RbalSim.F)
+        # axes
+        axis(1, las=1)
+        axis(2, las=1)
+        # Plot labels etc.
+        proportionalLabel(-0.15,  0.5,  expression(paste("Relative fraction (", italic(R[f]), ")")), cex=1.3, adj=c(0.5, 0.5), xpd=NA, srt=90)        
+        proportionalLabel( 0.5,  -0.15,  expression(paste("Inbreeding coefficient (", italic(F), ")")), cex=1.3, adj=c(0.5, 0.5), xpd=NA)
+        # Legends
+        # Naive predictions
+        proportionalLabel( 0.73,  0.95,  expression(paste("Naive Prediction")), cex=1.3, adj=c(0.5, 0.5), xpd=NA)
+        legend(
+               x       =  usr[2]*0.78,
+               y       =  usr[4]*0.925,
+               legend  =  c(expression(paste(1-italic(F)))),
+               lty     =  1,
+               lwd     =  3,
+               col     =  colorBlindBlack8[1],
+               cex     =  1,
+               xjust   =  1,
+               yjust   =  1,
+               bty     =  'n',
+               border  =  NA
+               )
+        # Favored mutations
+        proportionalLabel( 0.75,  0.82,  expression(paste("Favored Mutations")), cex=1.3, adj=c(0.5, 0.5), xpd=NA)
+        legend(
+               x       =  usr[2]*0.93,
+               y       =  usr[4]*0.79,
+               legend  =  c(expression(paste("Large-", italic(x), " (Eq.7)")),
+                            expression(paste("Small-", italic(x), " (Eq.4)"))),
+               lty     =  c(2,3),
+               lwd     =  3,
+               col     =  colorBlindBlack8[2],
+               cex     =  1,
+               xjust   =  1,
+               yjust   =  1,
+               bty     =  'n',
+               border  =  NA
+               )
+        # Established mutations
+        proportionalLabel( 0.78,  0.64,  expression(paste("Established Mutations")), cex=1.3, adj=c(0.5, 0.5), xpd=NA)
+        legend(
+               x       =  usr[2]*0.93,
+               y       =  usr[4]*0.6,
+               legend  =  c(expression(paste("Large-", italic(x), " (Eq.8)")),
+                            expression(paste("Small-", italic(x), " (Eq.6)"))),
+               lty     =  c(2,3),
+               lwd     =  3,
+               col     =  colorBlindBlack8[3],
+               cex     =  1,
+               xjust   =  1,
+               yjust   =  1,
+               bty     =  'n',
+               border  =  NA
+               )
+        # simulations
+#        legend(
+#               x       =  usr[2]*0.865,
+#               y       =  usr[4]*0.47,
+#               legend  =  c(expression(paste("Simulations"))),
+#               pch     =  21,
+#               pt.bg   =  transparentColor(colorBlindBlack8[1], opacity=0.4),
+#               col     =  transparentColor(colorBlindBlack8[1], opacity=0.6),
+#               cex     =  1,
+#               xjust   =  1,
+#               yjust   =  1,
+#               bty     =  'n',
+#               border  =  NA
+#               )
+}
+
+###################################
 ###################################
 # Visualize 2-d FGM for Inbreeding
 
