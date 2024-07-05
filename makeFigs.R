@@ -40,18 +40,19 @@ if(!figuresDirectoriesExist) {
 ########################
 
 # Illustration of weak-selection classical results
+source('./R/functions-figures.R')
 toPdf(classicParamSpaceFig(), 
-			figPath(name='classicParamSpaceFig.pdf'), width=10, height=7)
-embed_fonts(figPath(name='classicParamSpaceFig.pdf'))
+			figPath(name='classicParamSpaceFig2.pdf'), width=11, height=8)
+embed_fonts(figPath(name='classicParamSpaceFig2.pdf'))
 
 # Relative proportion of parameter space resulting in
 # balancing selection for: 
-# 	(1) all mutations
-#   (2) Favored mutations
+# (1) all mutations
 toPdf(RelBalancingFig(favouredMuts=FALSE), 
 			figPath(name='RelBalancingFig-AllMuts.pdf'), width=10, height=8)
 embed_fonts(figPath(name='RelBalancingFig-AllMuts.pdf'))
 
+# (2) Favored mutations
 toPdf(RelBalancingFig(favouredMuts=TRUE), 
 			figPath(name='RelBalancingFig-FavMuts.pdf'), width=10, height=8)
 embed_fonts(figPath(name='RelBalancingFig-FavMuts.pdf'))
@@ -62,11 +63,17 @@ toPdf(RelBalancingEstablishedFig(),
 			figPath(name='RelBalancingFig-EstMuts.pdf'), width=10, height=8)
 embed_fonts(figPath(name='RelBalancingFig-EstMuts.pdf'))
 
+# Summary figure showing relative proportion of parameter
+# space resluting in balancing selection for favored and
+# established mutations, with variable mutation effect
+# sizes. 
+ source('./R/functions-figures.R')
+ source('./R/functions-FGM-Simulations.R')
+toPdf(RelBalancing_SummaryFig(Ne=10^5, sim.reps=10^5), 
+			figPath(name='RelBalancing_SummaryFig.pdf'), width=7, height=7)
+embed_fonts(figPath(name='RelBalancing_SummaryFig.pdf'))
 
-# rm(list=ls())
-# source('./R/functions-figures.R')
-# source('./R/functions-FGM-Simulations.R')
-# RelBalancingEstablishedFig()
+
 
 
 # Kimura-Ohta invasion plot for arbitrary selection strength

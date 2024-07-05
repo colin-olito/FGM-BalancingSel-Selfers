@@ -282,7 +282,7 @@ print(paste('mut. size ', i, "/", length(Fisher.x)))
 
 	# export data as .csv to ./out
 	if(writeFile) {
-			filename <-  paste("./out/relBal_smallMut_EstabMuts", "_Ne", Ne, "_F", F, "_n", n, "_z", z, "_h", h, "_reps", sim.reps, ".csv", sep="")
+			filename <-  paste("./out/relBal_smallMut_EstabMuts", "_Ne", Ne, "_F", F, "_n", n, "_z", z, "_h", h, "_reps", reps, ".csv", sep="")
 			write.csv(res.df, file=filename, row.names = FALSE)
 	} else{
 			# return dataframe
@@ -363,7 +363,7 @@ print(paste('Inbreeding Coefficient ', i, "/", length(F.I)))
 
 	# export data as .csv to ./out
 	if(writeFile) {
-			filename <-  paste("./out/relBal_smallMut_F_EstabMuts", "_Ne", Ne, "_n", n, "_z", z, "_h", h, "_reps", sim.reps, ".csv", sep="")
+			filename <-  paste("./out/relBal_smallMut_F_EstabMuts", "_Ne", Ne, "_n", n, "_z", z, "_h", h, "_reps", reps, ".csv", sep="")
 			write.csv(res.df, file=filename, row.names = FALSE)
 	} else{
 			# return dataframe
@@ -510,7 +510,21 @@ print(paste('Inbreeding Coefficient ', i, "/", length(F.I)))
 }
 
 
+#################################################
+# Classical weak selection invasion conditions
+#################################################
+
+upper.classic = function(F, s.2){
+  s.2/F
+}
+lower.classic = function(F, s.2){
+  F*s.2
+}
+
 ########### CONTINUE EDITING HERE ###########
+
+
+
 
 
 #################################################

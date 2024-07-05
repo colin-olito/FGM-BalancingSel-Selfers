@@ -171,26 +171,17 @@ erf <- function(x) {
 classicParamSpaceFig  <-  function() {
 
     # Set inbreeding values
-    inbreeding.states = c(0.1, 0.3, 0.5, 0.7)
-    F.I = inbreeding.states[1]
-
-    # define invasion condition functions
-    upper.classic = function(t.2){
-      t.2/F.I
-    }
-    lower.classic = function(t.2){
-      F.I*t.2
-    }
+    F.I = c(0.1, 0.3, 0.5, 0.7)
 
     # Colors
-    colorBlindBlack8  <- c("#000000", "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7")
+    COL8  <- c("#000000", "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7")
 
     # set plot layout
-    layout.mat  <-  matrix(c(1,2), nrow=1, ncol=2, byrow=TRUE)
+    layout.mat  <-  matrix(c(1,2,3), nrow=1, ncol=3, byrow=TRUE)
     layout      <-  layout(layout.mat,respect=TRUE)
 
     # Generate Plot
-    par(omi=c(0.5, 0.5, 0.5, 0.5), mar = c(4,4,4,1), bty='o', xaxt='s', yaxt='s')
+    par(omi=c(0.5, 0.5, 0.5, 0.5), mar = c(4,4,4,2), bty='o', xaxt='s', yaxt='s')
      # Panel (A) Polymorphic space
      plot(NA, axes=FALSE, type='n', main='',xlim = c(0,1), ylim = c(0,1), ylab='', xlab='', cex.lab=1.2)
         usr  <-  par('usr')
@@ -198,69 +189,126 @@ classicParamSpaceFig  <-  function() {
         plotGrid(lineCol='grey80')
         box()
         # Generate Curves
-        curve(upper.classic, 0, F.I, xlim = c(0, 1), lwd = 3, xlab = "t.2", ylab = "t.1", add=TRUE, col=colorBlindBlack8[1])
-        curve(lower.classic, 0, 1, add = TRUE, lwd = 3, col=colorBlindBlack8[1])
-        for(i in 2:4){
-            F.I = inbreeding.states[i]
-            curve(upper.classic, 0, F.I, add = TRUE, lwd = 3, col = colorBlindBlack8[i])
-            curve(lower.classic, 0, 1, add = TRUE, lwd = 3, col = colorBlindBlack8[i])
+        s2  <-  0:1000/1000
+        for(i in 1:4){
+            upper  <-  upper.classic(F=F.I[i], s.2 = s2)
+            lower  <-  lower.classic(F=F.I[i], s.2 = s2)
+            lines(upper[upper < 1 ] ~ s2[upper < 1 ], lwd=2, col=COL8[i])
+            lines(lower ~ s2, lwd=2, col=COL8[i])
         }
         # axes
         axis(1, las=1)
         axis(2, las=1)
         # Plot labels etc.
-        proportionalLabel(-0.2,  0.5,   expression(paste(italic(t[2]))), cex=1.3, adj=c(0.5, 0.5), xpd=NA, srt=90)        
-        proportionalLabel( 0.5,  -0.25, expression(paste(italic(t[1]))), cex=1.3, adj=c(0.5, 0.5), xpd=NA)        
+#        proportionalLabel(0.05,  1.05,   expression(paste("A")), cex=1.5, adj=c(0.5, 0.5), xpd=NA)
+        proportionalLabel(0.5,  1.075,   expression(paste("Weak-selection approx.")), cex=1.5, adj=c(0.5, 0.5), xpd=NA)
+#        proportionalLabel(-0.25,  0.5,   expression(paste(italic(s[2]))), cex=1.3, adj=c(0.5, 0.5), xpd=NA, srt=90)        
+        proportionalLabel( -0.25,  0.5, expression(paste("Selection against ", italic(aa), " ",(italic(s[2])))), cex=1.3, adj=c(0.5, 0.5), xpd=NA, srt=90)
+#        proportionalLabel( 0.5,  -0.25, expression(paste(italic(s[1]))), cex=1.3, adj=c(0.5, 0.5), xpd=NA)        
+        proportionalLabel( 0.5,  -0.25, expression(paste("Selection against ", italic(AA), " ",(italic(s[1])))), cex=1.3, adj=c(0.5, 0.5), xpd=NA)        
+        proportionalLabel( 0.875,  0.17, expression(paste(italic(F), " = ", 0.1)), cex=1.2, adj=c(0.5, 0.5), xpd=NA, srt=8, col=COL8[1])
+        proportionalLabel( 0.875,  0.33,  expression(paste(italic(F), " = ", 0.3)), cex=1.2, adj=c(0.5, 0.5), xpd=NA, srt=13, col=COL8[2])
+        proportionalLabel( 0.875,  0.5,  expression(paste(italic(F), " = ", 0.5)), cex=1.2, adj=c(0.5, 0.5), xpd=NA, srt=25, col=COL8[3])
+        proportionalLabel( 0.875,  0.67,  expression(paste(italic(F), " = ", 0.7)), cex=1.2, adj=c(0.5, 0.5), xpd=NA, srt=30, col=COL8[4])
 
-        proportionalLabel( 0.875,  0.17, expression(paste(italic(F), " = ", 0.1)), cex=1.2, adj=c(0.5, 0.5), xpd=NA, srt=8, col=colorBlindBlack8[1])
-        proportionalLabel( 0.875,  0.33,  expression(paste(italic(F), " = ", 0.3)), cex=1.2, adj=c(0.5, 0.5), xpd=NA, srt=13, col=colorBlindBlack8[2])
-        proportionalLabel( 0.875,  0.5,  expression(paste(italic(F), " = ", 0.5)), cex=1.2, adj=c(0.5, 0.5), xpd=NA, srt=25, col=colorBlindBlack8[3])
-        proportionalLabel( 0.875,  0.67,  expression(paste(italic(F), " = ", 0.7)), cex=1.2, adj=c(0.5, 0.5), xpd=NA, srt=30, col=colorBlindBlack8[4])
 
-     # Panel (B) Proportion of parameter space where balancing selection occurs
+    # Panel (B) Kimura & Ohto (1971) invasion plot
+    plot(NA, axes=FALSE, type='n', main='', xlim = c(0,1), ylim = c(0,1), ylab='', xlab='', cex.lab=1.2)
+        usr  <-  par('usr')
+        rect(usr[1], usr[3], usr[2], usr[4], col='white', border=NA)
+        plotGrid(lineCol='grey80')
+        box()
+        # Plot lower invasion boundaries
+        s1.vals  <-  seq(0,1,0.01)
+        lines(KO_InvCond_F_low(s1 = s1.vals, F=0.1) ~ s1.vals, ylim=c(0, 1), lwd=2, col=COL8[1])
+        lines(KO_InvCond_F_low(s1 = s1.vals, F=0.3) ~ s1.vals, ylim=c(0, 1), lwd=2, col=COL8[2])
+        lines(KO_InvCond_F_low(s1 = s1.vals, F=0.5) ~ s1.vals, ylim=c(0, 1), lwd=2, col=COL8[3])
+        lines(KO_InvCond_F_low(s1 = s1.vals, F=0.7) ~ s1.vals, ylim=c(0, 1), lwd=2, col=COL8[4])
+        lines(KO_InvCond_F_low(s1 = s1.vals, F=0.98) ~ s1.vals, ylim=c(0, 1), lwd=2, col=COL8[6])
+        # Polygon showing always polymorphic space
+#        segments(0.0,0.0,1,1, lwd=2, lty=3)
+        polygon(c(0.5,0.5,1,1), c(0.5,1,1,0.5), col=adjustcolor(COL8[1], alpha=0.25))
+        # Plot lower invasion boundaries
+        s1.vals  <-  seq(0,0.5,0.001)
+        lines(KO_InvCond_F_up(s1 = s1.vals, F=0.1)[KO_InvCond_F_up(s1 = s1.vals, F=0.1) <=1] ~ s1.vals[KO_InvCond_F_up(s1 = s1.vals, F=0.1) <=1], ylim=c(0, 1), lwd=2, col=COL8[1])
+        lines(KO_InvCond_F_up(s1 = s1.vals, F=0.3)[KO_InvCond_F_up(s1 = s1.vals, F=0.3) <=1] ~ s1.vals[KO_InvCond_F_up(s1 = s1.vals, F=0.3) <=1], ylim=c(0, 1), lwd=2, col=COL8[2])
+        lines(KO_InvCond_F_up(s1 = s1.vals, F=0.5)[KO_InvCond_F_up(s1 = s1.vals, F=0.5) <=1] ~ s1.vals[KO_InvCond_F_up(s1 = s1.vals, F=0.5) <=1], ylim=c(0, 1), lwd=2, col=COL8[3])
+        lines(KO_InvCond_F_up(s1 = s1.vals, F=0.7)[KO_InvCond_F_up(s1 = s1.vals, F=0.7) <=1] ~ s1.vals[KO_InvCond_F_up(s1 = s1.vals, F=0.7) <=1], ylim=c(0, 1), lwd=2, col=COL8[4])
+        s1.vals  <-  seq(0,0.5,0.0001)
+        lines(KO_InvCond_F_up(s1 = s1.vals, F=0.98)[KO_InvCond_F_up(s1 = s1.vals, F=0.98) <=1] ~ s1.vals[KO_InvCond_F_up(s1 = s1.vals, F=0.98) <=1], ylim=c(0, 1), lwd=2, col=COL8[6])
+        # Inv Cond. Annotations
+        proportionalLabel( 0.875,  0.15, expression(paste(italic(F), " = ", 0.1)), cex=1.2, adj=c(0.5, 0.5), xpd=NA, srt=6, col=COL8[1])
+        proportionalLabel( 0.875,  0.275,  expression(paste(italic(F), " = ", 0.3)), cex=1.2, adj=c(0.5, 0.5), xpd=NA, srt=9, col=COL8[2])
+        proportionalLabel( 0.875,  0.365,  expression(paste(italic(F), " = ", 0.5)), cex=1.2, adj=c(0.5, 0.5), xpd=NA, srt=9, col=COL8[3])
+        proportionalLabel( 0.875,  0.44,  expression(paste(italic(F), " = ", 0.7)), cex=1.2, adj=c(0.5, 0.5), xpd=NA, srt=8, col=COL8[4])
+        proportionalLabel( 0.65,  0.45,  expression(paste(italic(F), " = ", 0.98)), cex=1.2, adj=c(0.5, 0.5), xpd=NA, srt=3, col=COL8[6])
+        # axes
+        axis(1, las=1)
+        axis(2, labels=NA)
+        # Plot labels etc.
+#        proportionalLabel(0.05,  1.05,   expression(paste("B")), cex=1.5, adj=c(0.5, 0.5), xpd=NA)
+        proportionalLabel(0.5,  1.075,   expression(paste("Arbitrary selection strength")), cex=1.5, adj=c(0.5, 0.5), xpd=NA)
+        proportionalLabel(0.75,  0.78,   expression(paste(italic("Always"))), cex=1.2, adj=c(0.5, 0.5), xpd=NA)
+        proportionalLabel(0.75,  0.72,   expression(paste(italic("Polymorphic"))), cex=1.2, adj=c(0.5, 0.5), xpd=NA)
+#        proportionalLabel( 0.5, -0.25, expression(paste(italic(s[1]))), cex=1.3, adj=c(0.5, 0.5), xpd=NA)
+        proportionalLabel( 0.5,  -0.25, expression(paste("Selection against ", italic(AA), " ",(italic(s[1])))), cex=1.3, adj=c(0.5, 0.5), xpd=NA)        
+#        proportionalLabel(-0.2, 0.5,   expression(paste(italic(s[2]))), cex=1.3, adj=c(0.5, 0.5), xpd=NA, srt=90)
+ 
+     # Panel (c) Proportion of parameter space where balancing selection occurs
      plot(NA, axes=FALSE, type='n', main='',xlim = c(0,1), ylim = c(0,1), ylab='', xlab='', cex.lab=1.2)
         usr  <-  par('usr')
         rect(usr[1], usr[3], usr[2], usr[4], col='white', border=NA)
         plotGrid(lineCol='grey80')
         box()
         # Generate Lines + points
-        inbreeding.states = 0.05 + 0:9/10
-        Pr.balancing = rep(0, length(inbreeding.states))
-        for(i in 1:length(inbreeding.states)){
-          F.I = inbreeding.states[i]
-          t.1 = runif(10^6)
-          t.2 = runif(10^6)
-          condition = t.1 > t.2*F.I & t.1 < t.2/F.I
-          Pr.balancing[i] = length(condition[!condition == FALSE])/10^6
+        F.I = 0.05 + 0:9/10
+        Pr.balancing = rep(0, length(F.I))
+        Pr.balancing.KO = rep(0, length(F.I))
+        for(i in 1:length(F.I)){
+          s.1 = runif(10^6)
+          s.2 = runif(10^6)
+          condition = s.1 > s.2*F.I[i] & s.1 < s.2/F.I[i]
+          KOcondition = s.2 > KO_InvCond_F_low(F=F.I[i], s1=s.1) & s.1 > KO_InvCond_F_low(F=F.I[i], s1=s.2)
+          Pr.balancing[i] = sum(condition)/10^6
+          Pr.balancing.KO[i] = sum(KOcondition)/10^6
         }
-        points(0:1000/1000, 1 - 0:1000/1000, type = "l", lwd = 3, xlab = "inbreeding coefficient (F)", ylab = "Pr.balancing")
-        points(inbreeding.states, Pr.balancing, pch = 16, col = "RED")
+        lines(0:1000/1000, 1 - 0:1000/1000, lwd = 2)
+        points(Pr.balancing ~ F.I, cex=1.5, pch = 21, col = transparentColor(COL8[1], opacity=0.8), bg=transparentColor(COL8[1], opacity=0.4))
+        points(Pr.balancing.KO ~ F.I, cex=1.5, pch = 21, col = transparentColor(COL8[2], opacity=0.8), bg=transparentColor(COL8[2], opacity=0.4))
         # axes
         axis(1, las=1)
         axis(2, las=1)
         # Plot labels etc.
-        proportionalLabel(-0.2,  0.5,   expression(paste("Pr(balancing)")), cex=1.3, adj=c(0.5, 0.5), xpd=NA, srt=90)        
+#        proportionalLabel(0.05,  1.05,   expression(paste("C")), cex=1.5, adj=c(0.5, 0.5), xpd=NA)
+        proportionalLabel(0.5,  1.075,   expression(paste("Fraction of parameter space")), cex=1.5, adj=c(0.5, 0.5), xpd=NA)
+        proportionalLabel(-0.2,  0.5,   expression(paste("Proportion under balancing sel.")), cex=1.3, adj=c(0.5, 0.5), xpd=NA, srt=90)        
         proportionalLabel( 0.5,  -0.25,  expression(paste("Inbreeding coefficient (", italic(F), ")")), cex=1.3, adj=c(0.5, 0.5), xpd=NA)
         # Legend
         legend(
-               x       =  usr[2]*0.88,
+               x       =  usr[2]*0.94,
                y       =  usr[4]*0.99,
                legend  =  expression(paste(1-italic(F))),
                lty     =  1,
-               col     =  colorBlindBlack8[1],
+               lwd     =  2,
+               col     =  COL8[1],
                cex     =  1,
                xjust   =  1,
                yjust   =  1,
                bty     =  'n',
                border  =  NA
                )
+        proportionalLabel(0.83,  0.84,   expression(paste("Simulations")), cex=1.3, adj=c(0.5, 0.5), xpd=NA, srt=0)        
         legend(
-               x       =  usr[2]*0.975,
-               y       =  usr[4]*0.91,
-               legend  =  expression(paste("Simulations")),
+               x       =  usr[2]*0.98,
+               y       =  usr[4]*0.815,
+               legend  =  c(expression(paste("Weak sel.")),
+                            expression(paste("Arb. sel."))),
                pch     =  21,
-               col     =  'red',
-               pt.bg   =  'red',
+               col     =  c(transparentColor(COL8[1], opacity=0.8),
+                            transparentColor(COL8[2], opacity=0.8)),
+               pt.bg   =  c(transparentColor(COL8[1], opacity=0.4),
+                            transparentColor(COL8[2], opacity=0.4)),
+               pt.cex  =  1,
                cex     =  1,
                xjust   =  1,
                yjust   =  1,
@@ -643,7 +691,7 @@ RelBalancingEstablishedFig  <-  function(F.I = 1/2, h=1/2, Ne = 10^4) {
             lines(rep(((1 - F.I)/(1 + F.I)), length(sizes)) ~ sizes, lty = 3, lwd = 3)
             lines(rep((1 - F.I)^2/(1 + F.I)^2, length(sizes))~ sizes, lty = 3, , lwd = 3, col = "grey60")
         # Simulations
-        RbalSim  <-  read.csv("./out/relBal_smallMut_EstabMuts_Ne10e5_F0.5_n50_z1_h0.5_reps10e5.csv")
+        RbalSim  <-  read.csv("./out/relBal_smallMut_EstabMuts_Ne10e5_F0.5_n50_z1_h0.5_reps10e4.csv")
 #            RbalSim  <-  relBalancingMutSize_EstabMuts_Sims(F = F.I, Ne=Ne, reps=5*10^3)
             points(rBal.est ~ x, pch=21, col=transparentColor(colorBlindBlack8[1], opacity=0.6), bg=transparentColor(colorBlindBlack8[1], opacity=0.4), data=RbalSim)
         # axes
@@ -776,7 +824,7 @@ RelBalancing_SummaryFig  <-  function(h=1/2, Ne = 10^4, sim.reps=10^3) {
             lines(((1 - F.values)^2/(1 + F.values)^2) ~ F.values, lty = 3, lwd = 2, col = colorBlindBlack8[3])
             lines(relBal_largex_est(F=F.values) ~ F.values, lty = 2, lwd = 2, col = colorBlindBlack8[3])
         # Simulations
-            RbalSim.F  <-  read.csv("./out/relBal_variable_x_EstabMuts_Ne10e5_n50_z1_h0.5_reps10e5.csv", header=TRUE)
+            RbalSim.F  <-  read.csv("./out/relBal_variable_x_EstabMuts_Ne1e+05_n50_z1_h0.5_reps10000.csv", header=TRUE)
 #            RbalSim.F  <-  relBalancingMutSize_variable_x_EstabMuts_Sims(h=1/2, sim.reps=sim.reps)
 #            points(rBal.new ~ F, pch=21, col=transparentColor(colorBlindBlack8[2], opacity=0.9), bg=transparentColor(colorBlindBlack8[2], opacity=0.4), data=RbalSim.F)
             points(rBal.fav ~ F, pch=21, col=transparentColor(colorBlindBlack8[2], opacity=0.9), bg=transparentColor(colorBlindBlack8[2], opacity=0.4), data=RbalSim.F)
