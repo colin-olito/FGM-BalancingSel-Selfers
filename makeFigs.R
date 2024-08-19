@@ -90,16 +90,94 @@ embed_fonts(figPath(name='relMutSizeMaxRBal.pdf'))
 
 #######################
 # FGM 2D Visualizations
-source('./R/functions-figures.R')
-Fisher_2D_ExploreFig(z=0.5, reps=5*10^4)
 
-toPdf(Fisher_2D_ExploreFig(z=0.75, reps=5*10^4), 
-			figPath(name='Fisher_2D_ExploreFig_z0.5.pdf'), width=15, height=10)
-embed_fonts(figPath(name='Fisher_2D_ExploreFig_z0.5.pdf'))
+# "Moonrise in flatland"
+toPdf(Fisher_2D_ExploreFig(z=0.01, reps=5*10^4), 
+			figPath(name='Fisher_2D_ExploreFig_z0.01.pdf'), width=15, height=10)
+embed_fonts(figPath(name='Fisher_2D_ExploreFig_z0.01.pdf'))
+
+toPdf(Fisher_2D_ExploreFig(z=0.05, reps=5*10^4), 
+			figPath(name='Fisher_2D_ExploreFig_z0.05.pdf'), width=15, height=10)
+embed_fonts(figPath(name='Fisher_2D_ExploreFig_z0.05.pdf'))
+
+toPdf(Fisher_2D_ExploreFig(z=0.1, reps=5*10^4), 
+			figPath(name='Fisher_2D_ExploreFig_z0.1.pdf'), width=15, height=10)
+embed_fonts(figPath(name='Fisher_2D_ExploreFig_z0.1.pdf'))
+
+toPdf(Fisher_2D_ExploreFig(z=0.15, reps=5*10^4), 
+			figPath(name='Fisher_2D_ExploreFig_z0.15.pdf'), width=15, height=10)
+embed_fonts(figPath(name='Fisher_2D_ExploreFig_z0.15.pdf'))
+
+toPdf(Fisher_2D_ExploreFig(z=0.2, reps=5*10^4), 
+			figPath(name='Fisher_2D_ExploreFig_z0.2.pdf'), width=15, height=10)
+embed_fonts(figPath(name='Fisher_2D_ExploreFig_z0.2.pdf'))
+
+toPdf(Fisher_2D_ExploreFig(z=0.25, reps=5*10^4), 
+			figPath(name='Fisher_2D_ExploreFig_z0.25.pdf'), width=15, height=10)
+embed_fonts(figPath(name='Fisher_2D_ExploreFig_z0.25.pdf'))
+
+toPdf(Fisher_2D_ExploreFig(z=0.3, reps=5*10^4), 
+			figPath(name='Fisher_2D_ExploreFig_z0.3.pdf'), width=15, height=10)
+embed_fonts(figPath(name='Fisher_2D_ExploreFig_z0.3.pdf'))
+
+toPdf(Fisher_2D_ExploreFig(z=0.4, reps=5*10^4), 
+			figPath(name='Fisher_2D_ExploreFig_z0.4.pdf'), width=15, height=10)
+embed_fonts(figPath(name='Fisher_2D_ExploreFig_z0.4.pdf'))
 
 toPdf(Fisher_2D_ExploreFig(z=0.5, reps=5*10^4), 
 			figPath(name='Fisher_2D_ExploreFig_z0.5.pdf'), width=15, height=10)
 embed_fonts(figPath(name='Fisher_2D_ExploreFig_z0.5.pdf'))
+
+
+# Figure comparing low-n geometric approximation for R_bal
+# with 2-n simulations and large-n small mutation approx.
+
+toPdf(Fisher_2D_CompareFig(z=0.01, reps=5*10^4), 
+			figPath(name='Low-n_compareFig_z0.01.pdf'), width=8, height=8)
+embed_fonts(figPath(name='Low-n_compareFig_z0.01.pdf'))
+
+toPdf(Fisher_2D_CompareFig(z=0.05, reps=5*10^4), 
+			figPath(name='Low-n_compareFig_z0.05.pdf'), width=8, height=8)
+embed_fonts(figPath(name='Low-n_compareFig_z0.05.pdf'))
+
+toPdf(Fisher_2D_CompareFig(z=0.1, reps=5*10^4), 
+			figPath(name='Low-n_compareFig_z0.1.pdf'), width=8, height=8)
+embed_fonts(figPath(name='Low-n_compareFig_z0.1.pdf'))
+
+toPdf(Fisher_2D_CompareFig(z=0.15, reps=5*10^4), 
+			figPath(name='Low-n_compareFig_z0.15.pdf'), width=8, height=8)
+embed_fonts(figPath(name='Low-n_compareFig_z0.15.pdf'))
+
+toPdf(Fisher_2D_CompareFig(z=0.2, reps=5*10^4), 
+			figPath(name='Low-n_compareFig_z0.2.pdf'), width=8, height=8)
+embed_fonts(figPath(name='Low-n_compareFig_z0.2.pdf'))
+
+toPdf(Fisher_2D_CompareFig(z=0.25, reps=5*10^4), 
+			figPath(name='Low-n_compareFig_z0.25.pdf'), width=8, height=8)
+embed_fonts(figPath(name='Low-n_compareFig_z0.25.pdf'))
+
+
+# Big initial displacements
+toPdf(Fisher_2D_CompareFig(z=1, reps=5*10^4), 
+			figPath(name='Low-n_compareFig_z1.pdf'), width=8, height=8)
+embed_fonts(figPath(name='Low-n_compareFig_z1.pdf'))
+
+toPdf(Fisher_2D_CompareFig(z=2, reps=5*10^4), 
+			figPath(name='Low-n_compareFig_z2.pdf'), width=8, height=8)
+embed_fonts(figPath(name='Low-n_compareFig_z2.pdf'))
+
+toPdf(Fisher_2D_CompareFig(z=3, reps=5*10^4), 
+			figPath(name='Low-n_compareFig_z3.pdf'), width=8, height=8)
+embed_fonts(figPath(name='Low-n_compareFig_z3.pdf'))
+
+
+
+
+# Moonrise in flatland for larger initial displacements.
+# Things get weird.
+toPdf(Fisher_2D_ExploreFig(z=0.75, reps=5*10^4), 
+			figPath(name='Fisher_2D_ExploreFig_z0.75.pdf'), width=15, height=10)
+embed_fonts(figPath(name='Fisher_2D_ExploreFig_z0.75.pdf'))
 
 toPdf(Fisher_2D_ExploreFig(z=1, reps=5*10^4), 
 			figPath(name='Fisher_2D_ExploreFig_z1.pdf'), width=15, height=10)

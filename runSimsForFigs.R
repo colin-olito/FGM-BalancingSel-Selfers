@@ -25,11 +25,14 @@ if(!simulationDirectoryExists) {
 
 # Established mutations, small mutation size limit
 # Panel (A) -- R_f ~ x 
-relBalancingMutSize_EstabMuts_Sims(Ne = 10^5, n = 50, z = 1, h = 1/2, reps=10^4, writeFile=TRUE)
+relBalancingMutSize_EstabMuts_Sims(Ne = 10^5, n = 50, z = 1, h = 1/2, reps=10^5, writeFile=TRUE)
+relBalancingMutSize_EstabMuts_Sims(Ne = 10^6, n = 50, z = 1, h = 1/2, reps=10^5, writeFile=TRUE)
 # Panel (B) -- R_f ~ F 
-relBalancingSmallx_EstabMuts_F_Sims(Ne = 10^5, n = 50, z = 1, h = 1/2, reps=10^4, writeFile=TRUE)
+relBalancingSmallx_EstabMuts_F_Sims(Ne = 10^5, n = 50, z = 1, h = 1/2, reps=10^5, writeFile=TRUE)
+relBalancingSmallx_EstabMuts_F_Sims(Ne = 10^6, n = 50, z = 1, h = 1/2, reps=10^5, writeFile=TRUE)
 
 # Established mutations, variable mutation size
 # R_f ~ F, showing both large- and small-x approximations
 # with simulation results overlaid
 relBalancingMutSize_variable_x_EstabMuts_Sims(Ne = 10^5, n = 50, z = 1, h = 1/2, sim.reps=10^4, writeFile = TRUE)
+relBalancingMutSize_variable_x_EstabMuts_Sims(Ne = 10^6, n = 50, z = 1, h = 1/2, sim.reps=10^4, writeFile = TRUE)

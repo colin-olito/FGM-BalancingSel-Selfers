@@ -645,7 +645,7 @@ Pr.fix.F = function(x, F.I, z = 1, n = 50){
   z^2/n*x*(sqrt(2)*(1 + F.I)/sqrt(pi)*exp(-x^2/2*(3 + 1*F.I)^2/(2*(1 + F.I))^2) - x*(1 + 3*F.I)/2*(1 - erf(x*(3 + 1*F.I)/(2*sqrt(2)*(1 + F.I)))))
 }
 
-Pr.bal.F = function(x, F.I, z = 1, n = 50){
+Pr.bal.est.F = function(x, F.I, z = 1, n = 50){
   z^2/n*x*(sqrt(2)*(1 + F.I)/sqrt(pi)*exp(-x^2/2*(1 + 3*F.I)^2/(2*(1 + F.I))^2) - x*(1 + 3*F.I)/2*(1 - erf(x*(1 + 3*F.I)/(2*sqrt(2)*(1 + F.I))))) - z^2/n*x*(sqrt(2)*(1 + F.I)/sqrt(pi)*exp(-x^2/2*(3 + 1*F.I)^2/(2*(1 + F.I))^2) - x*(1 + 3*F.I)/2*(1 - erf(x*(3 + 1*F.I)/(2*sqrt(2)*(1 + F.I)))))
 }
 
@@ -657,7 +657,7 @@ Pr.fix = function(x, z = 1, n = 50){
   z^2/n*x*(sqrt(2)/sqrt(pi)*exp(-9*x^2/8) - x/2*(1 - erf(3*x/(2*sqrt(2)))))
 }
 
-Pr.bal = function(x, z = 1, n = 50){
+Pr.bal.est = function(x, z = 1, n = 50){
   z^2/n*x*(sqrt(2)/sqrt(pi)*exp(-x^2/8) - x/2*(1 - erf(x/(2*sqrt(2))))) - z^2/n*x*(sqrt(2)/sqrt(pi)*exp(-9*x^2/8) - x/2*(1 - erf(3*x/(2*sqrt(2)))))
 }
 
@@ -685,13 +685,13 @@ RelBalancingEstablishedFig  <-  function(F.I = 1/2, h=1/2, Ne = 10^4) {
         plotGrid(lineCol='grey80')
         box()
         # Generate Curves
-            Rbal     <-  (Pr.bal.F(x = sizes, F.I = F.I)/Pr.est.F(x = sizes, F.I = F.I))/(Pr.bal(sizes)/Pr.est(sizes))
+            Rbal     <-  (Pr.bal.est.F(x = sizes, F.I = F.I)/Pr.est.F(x = sizes, F.I = F.I))/(Pr.bal.est(sizes)/Pr.est(sizes))
             lines(Rbal ~ sizes,  col = "grey60", lwd = 3)
             lines(rep(1 - F.I, length(sizes)) ~ sizes, lwd = 3)
             lines(rep(((1 - F.I)/(1 + F.I)), length(sizes)) ~ sizes, lty = 3, lwd = 3)
             lines(rep((1 - F.I)^2/(1 + F.I)^2, length(sizes))~ sizes, lty = 3, , lwd = 3, col = "grey60")
         # Simulations
-        RbalSim  <-  read.csv("./out/relBal_smallMut_EstabMuts_Ne10e5_F0.5_n50_z1_h0.5_reps10e4.csv")
+        RbalSim  <-  read.csv("./out/relBal_smallMut_EstabMuts_Ne1e+05_F0.5_n50_z1_h0.5_reps10000.csv")
 #            RbalSim  <-  relBalancingMutSize_EstabMuts_Sims(F = F.I, Ne=Ne, reps=5*10^3)
             points(rBal.est ~ x, pch=21, col=transparentColor(colorBlindBlack8[1], opacity=0.6), bg=transparentColor(colorBlindBlack8[1], opacity=0.4), data=RbalSim)
         # axes
@@ -745,7 +745,7 @@ RelBalancingEstablishedFig  <-  function(F.I = 1/2, h=1/2, Ne = 10^4) {
             lines(F.values, (1 - F.values)/(1 + F.values), lty = 3, lwd = 2, col = colorBlindBlack8[1])
             lines(F.values, (1 - F.values)^2/(1 + F.values)^2, lty = 3, lwd = 2, col = "grey60")
         # Simulations
-            RbalSim.F  <-  read.csv("./out/relBal_smallMut_F_EstabMuts_Ne10e5_n50_z1_h0.5_reps10e5.csv", header=TRUE)
+            RbalSim.F  <-  read.csv("./out/relBal_smallMut_F_EstabMuts_Ne1e+06_n50_z1_h0.5_reps10000.csv", header=TRUE)
 #            RbalSim.F  <-  relBalancingSmallx_EstabMuts_F_Sims(h=1/2, Ne=Ne, reps=10^5)
             points(rBal.est ~ F, pch=21, col=transparentColor(colorBlindBlack8[1], opacity=0.6), bg=transparentColor(colorBlindBlack8[1], opacity=0.4), data=RbalSim.F)
         # axes
@@ -824,7 +824,7 @@ RelBalancing_SummaryFig  <-  function(h=1/2, Ne = 10^4, sim.reps=10^3) {
             lines(((1 - F.values)^2/(1 + F.values)^2) ~ F.values, lty = 3, lwd = 2, col = colorBlindBlack8[3])
             lines(relBal_largex_est(F=F.values) ~ F.values, lty = 2, lwd = 2, col = colorBlindBlack8[3])
         # Simulations
-            RbalSim.F  <-  read.csv("./out/relBal_variable_x_EstabMuts_Ne1e+05_n50_z1_h0.5_reps10000.csv", header=TRUE)
+            RbalSim.F  <-  read.csv("./out/relBal_variable_x_EstabMuts_Ne1e+06_n50_z1_h0.5_reps10000.csv", header=TRUE)
 #            RbalSim.F  <-  relBalancingMutSize_variable_x_EstabMuts_Sims(h=1/2, sim.reps=sim.reps)
 #            points(rBal.new ~ F, pch=21, col=transparentColor(colorBlindBlack8[2], opacity=0.9), bg=transparentColor(colorBlindBlack8[2], opacity=0.4), data=RbalSim.F)
             points(rBal.fav ~ F, pch=21, col=transparentColor(colorBlindBlack8[2], opacity=0.9), bg=transparentColor(colorBlindBlack8[2], opacity=0.4), data=RbalSim.F)
@@ -833,7 +833,7 @@ RelBalancing_SummaryFig  <-  function(h=1/2, Ne = 10^4, sim.reps=10^3) {
         axis(1, las=1)
         axis(2, las=1)
         # Plot labels etc.
-        proportionalLabel(-0.15,  0.5,  expression(paste("Relative fraction (", italic(R[f]), ")")), cex=1.3, adj=c(0.5, 0.5), xpd=NA, srt=90)        
+        proportionalLabel(-0.15,  0.5,  expression(paste("Relative fraction (", italic(R[bal]), ")")), cex=1.3, adj=c(0.5, 0.5), xpd=NA, srt=90)        
         proportionalLabel( 0.5,  -0.15,  expression(paste("Inbreeding coefficient (", italic(F), ")")), cex=1.3, adj=c(0.5, 0.5), xpd=NA)
         # Legends
         # Naive predictions
@@ -903,15 +903,45 @@ RelBalancing_SummaryFig  <-  function(h=1/2, Ne = 10^4, sim.reps=10^3) {
 ###################################
 # Visualize 2-d FGM for Inbreeding
 
+# InvCircle_F  <-  function(h, F, z) {
+#     c  <-  ((1 - F)/(1 + F))*((1 - h)/h)*z
+#     r  <-  ((1 - F)/(1 + F))*(z/h) + (1 - (1 - F)/(1+F))*z
+# 
+#     c(c,r)
+# }
+
+
 InvCircle_F  <-  function(h, F, z) {
-    c  <-  ((1 - F)/(1 + F))*((1 - h)/h)*z
-#    r  <-  ((1 - F)/(1 + F))*(z/h) + (1 - (1 - F)/(1+F))*z
+    r  <-  z/(F + h*(1 - F))
+    c  <-  -z+r
 
     c(c,r)
 }
 
+PosCircle_F  <-  function(h, F, z) {
+    r  <-  z/(1 + h*(1 - F))
+    c  <-  -z+r
 
-Fisher_2D_ExploreFig <-  function(z = 1, h = 1/2, reps=10^4) {
+    c(c,r)
+}
+
+invCircle_asin_nsolve  <-  function(z, h, F) {
+    rs  <-  seq(0,4*z, length=500)[-1]
+    test  <-  na.exclude(0 < asin(z)^2 - asin(rs*h - z)^2 + F*(asin(rs*h - z)^2 - asin(rs - z)^2))
+    r  <-  rs[sum(test)]/2
+    c  <-  -z + r
+    c(c,r)
+}
+posCircle_asin_nsolve  <-  function(z, h, F) {
+    rs  <-  seq(0,4*z, length=500)[-1]
+    test  <-   na.exclude(asin(abs(z - rs*h))^2 - asin(abs(rs - z))^2 >   F*(asin(abs(z - rs*h))^2 - asin(z)^2))
+    r  <-  rs[sum(test)]/2
+    c  <-  -z + r
+    c(c,r)
+}
+
+
+Fisher_2D_ExploreFig <-  function(z = 0.5, h = 1/2, reps=10^4) {
     
     # Create data for plotting
     dat <-  Fisher_2D_ExploreFigSims(z = z, h = h, reps = reps)
@@ -940,8 +970,12 @@ Fisher_2D_ExploreFig <-  function(z = 1, h = 1/2, reps=10^4) {
                z.hom.raw.2[F == 0.2 & PosSel.out == 1], pch=21, col=transparentColor(COL8[2], opacity=0.6), bg=transparentColor(COL8[2], opacity=0.4), data=dat)
         # Analytic ranges of pos. & bal. sel.
         # draw.circle(0,0,1, lwd=1.5, border=COL8[1]) # pos. sel.
-        InvCircle  <-  InvCircle_F(h=h, F=0.0, z=z)
+#        InvCircle  <-  InvCircle_F(h=h, F=0.0, z=z)
+#        PosCircle  <-  PosCircle_F(h=h, F=0.0, z=z)
+        InvCircle  <-  invCircle_asin_nsolve(h=h, F=0.0, z=z)
+        PosCircle  <-  posCircle_asin_nsolve(h=h, F=0.0, z=z)
         draw.circle(0,InvCircle[1],InvCircle[2], lty=1, lwd=1.5, border=COL8[1]) # bal. sel.
+        draw.circle(0,PosCircle[1],PosCircle[2], lty=1, lwd=1.5, border=COL8[5]) # bal. sel.
         draw.circle(0,0,z, lty=2, lwd=1.5, border=COL8[1]) # bal. sel.
         points(0,0, pch=21, col=1, bg=1, cex=1.5) # Phenotypic Optimum
         points(0,-z, pch=21, col=2, bg=2, cex=1.5) # Wild-type population phenotype
@@ -968,8 +1002,12 @@ Fisher_2D_ExploreFig <-  function(z = 1, h = 1/2, reps=10^4) {
                z.hom.raw.2[F == 0.2 & BalSel.F == 1], pch=21, col=transparentColor(COL8[3], opacity=0.6), bg=transparentColor(COL8[3], opacity=0.4), data=dat)
         points(z.hom.raw.1[F == 0.2 & PosSel.F == 1] ~ 
                z.hom.raw.2[F == 0.2 & PosSel.F == 1], pch=21, col=transparentColor(COL8[2], opacity=0.6), bg=transparentColor(COL8[2], opacity=0.4), data=dat)
-        InvCircle  <-  InvCircle_F(h=h, F=0.2, z=z)
+#        InvCircle  <-  InvCircle_F(h=h, F=0.2, z=z)
+#        PosCircle  <-  PosCircle_F(h=h, F=0.2, z=z)
+        InvCircle  <-  invCircle_asin_nsolve(h=h, F=0.2, z=z)
+        PosCircle  <-  posCircle_asin_nsolve(h=h, F=0.2, z=z)
         draw.circle(0,InvCircle[1],InvCircle[2], lty=1, lwd=1.5, border=COL8[1]) # bal. sel.
+        draw.circle(0,PosCircle[1],PosCircle[2], lty=1, lwd=1.5, border=COL8[5]) # bal. sel.
         draw.circle(0,0,z, lty=2, lwd=1.5, border=COL8[1]) # bal. sel.
         points(0,0, pch=21, col=1, bg=1, cex=1.5) # Phenotypic Optimum
         points(0,-z, pch=21, col=2, bg=2, cex=1.5) # Wild-type population phenotype
@@ -993,8 +1031,12 @@ Fisher_2D_ExploreFig <-  function(z = 1, h = 1/2, reps=10^4) {
         # Positive sel
         points(z.hom.raw.1[F == 0.4 & PosSel.F == 1] ~ 
                z.hom.raw.2[F == 0.4 & PosSel.F == 1], pch=21, col=transparentColor(COL8[2], opacity=0.6), bg=transparentColor(COL8[2], opacity=0.4), data=dat)
-        InvCircle  <-  InvCircle_F(h=h, F=0.4, z=z)
+#        InvCircle  <-  InvCircle_F(h=h, F=0.4, z=z)
+#        PosCircle  <-  PosCircle_F(h=h, F=0.4, z=z)
+        InvCircle  <-  invCircle_asin_nsolve(h=h, F=0.4, z=z)
+        PosCircle  <-  posCircle_asin_nsolve(h=h, F=0.4, z=z)
         draw.circle(0,InvCircle[1],InvCircle[2], lty=1, lwd=1.5, border=COL8[1]) # bal. sel.
+        draw.circle(0,PosCircle[1],PosCircle[2], lty=1, lwd=1.5, border=COL8[5]) # bal. sel.
         draw.circle(0,0,z, lty=2, lwd=1.5, border=COL8[1]) # bal. sel.
         points(0,0, pch=21, col=1, bg=1, cex=1.5) # Phenotypic Optimum
         points(0,-z, pch=21, col=2, bg=2, cex=1.5) # Wild-type population phenotype
@@ -1035,8 +1077,12 @@ Fisher_2D_ExploreFig <-  function(z = 1, h = 1/2, reps=10^4) {
         # Positive sel
         points(z.hom.raw.1[F == 0.6 & PosSel.F == 1] ~ 
                z.hom.raw.2[F == 0.6 & PosSel.F == 1], pch=21, col=transparentColor(COL8[2], opacity=0.6), bg=transparentColor(COL8[2], opacity=0.4), data=dat)
-        InvCircle  <-  InvCircle_F(h=h, F=0.6, z=z)
+#        InvCircle  <-  InvCircle_F(h=h, F=0.6, z=z)
+#        PosCircle  <-  PosCircle_F(h=h, F=0.6, z=z)
+        InvCircle  <-  invCircle_asin_nsolve(h=h, F=0.6, z=z)
+        PosCircle  <-  posCircle_asin_nsolve(h=h, F=0.6, z=z)
         draw.circle(0,InvCircle[1],InvCircle[2], lty=1, lwd=1.5, border=COL8[1]) # bal. sel.
+        draw.circle(0,PosCircle[1],PosCircle[2], lty=1, lwd=1.5, border=COL8[5]) # bal. sel.
         draw.circle(0,0,z, lty=2, lwd=1.5, border=COL8[1]) # bal. sel.
         points(0,0, pch=21, col=1, bg=1, cex=1.5) # Phenotypic Optimum
         points(0,-z, pch=21, col=2, bg=2, cex=1.5) # Wild-type population phenotype
@@ -1062,8 +1108,12 @@ Fisher_2D_ExploreFig <-  function(z = 1, h = 1/2, reps=10^4) {
         # Positive sel
         points(z.hom.raw.1[F == 0.8 & PosSel.F == 1] ~ 
                z.hom.raw.2[F == 0.8 & PosSel.F == 1], pch=21, col=transparentColor(COL8[2], opacity=0.6), bg=transparentColor(COL8[2], opacity=0.4), data=dat)
-        InvCircle  <-  InvCircle_F(h=h, F=0.8, z=z)
+#        InvCircle  <-  InvCircle_F(h=h, F=0.8, z=z)
+#        PosCircle  <-  PosCircle_F(h=h, F=0.8, z=z)
+        InvCircle  <-  invCircle_asin_nsolve(h=h, F=0.8, z=z)
+        PosCircle  <-  posCircle_asin_nsolve(h=h, F=0.8, z=z)
         draw.circle(0,InvCircle[1],InvCircle[2], lty=1, lwd=1.5, border=COL8[1]) # bal. sel.
+        draw.circle(0,PosCircle[1],PosCircle[2], lty=1, lwd=1.5, border=COL8[5]) # bal. sel.
         draw.circle(0,0,z, lty=2, lwd=1.5, border=COL8[1]) # bal. sel.
         points(0,0, pch=21, col=1, bg=1, cex=1.5) # Phenotypic Optimum
         points(0,-z, pch=21, col=2, bg=2, cex=1.5) # Wild-type population phenotype
@@ -1089,8 +1139,12 @@ Fisher_2D_ExploreFig <-  function(z = 1, h = 1/2, reps=10^4) {
         points(z.hom.raw.1[F == 0.98 & PosSel.F == 1] ~ 
                z.hom.raw.2[F == 0.98 & PosSel.F == 1], pch=21, col=transparentColor(COL8[2], opacity=0.6), bg=transparentColor(COL8[2], opacity=0.4), data=dat)
         # Analytic ranges of pos. & bal. sel.
-        InvCircle  <-  InvCircle_F(h=h, F=0.98, z=z)
+#        InvCircle  <-  InvCircle_F(h=h, F=0.98, z=z)
+#        PosCircle  <-  PosCircle_F(h=h, F=0.98, z=z)
+        InvCircle  <-  invCircle_asin_nsolve(h=h, F=0.98, z=z)
+        PosCircle  <-  posCircle_asin_nsolve(h=h, F=0.98, z=z)
         draw.circle(0,InvCircle[1],InvCircle[2], lty=1, lwd=1.5, border=COL8[1]) # bal. sel.
+        draw.circle(0,PosCircle[1],PosCircle[2], lty=1, lwd=1.5, border=COL8[5]) # bal. sel.
         draw.circle(0,0,z, lty=1, lwd=1.5, border=COL8[1]) # pos. sel.
         points(0,0, pch=21, col=1, bg=1, cex=1.5) # Phenotypic Optimum
         points(0,-z, pch=21, col=2, bg=2, cex=1.5) # Wild-type population phenotype
@@ -1100,4 +1154,112 @@ Fisher_2D_ExploreFig <-  function(z = 1, h = 1/2, reps=10^4) {
         # Plot labels etc.
         proportionalLabel(0.5,  1.05,   expression(paste(italic(F)," = ", 0.98)), cex=2, adj=c(0.5, 0.5), xpd=NA)
         proportionalLabel( 0.5, -0.2, expression(paste("Dimension 1")), cex=1.3, adj=c(0.5, 0.5), xpd=NA)
+}
+
+
+fBal_low_n_integral  <-  function(rInv, rPos){
+    d  <-  2*rInv
+    A  <-  2*rPos
+#    1 - (d * acos((A/d)) - A*sqrt(1 - (A/d)^2)))/d
+#    1 - (A/d)
+    (d - A)#/d
+}
+
+Fisher_2D_CompareFig  <-  function(z = 0.05, h = 1/2, reps=5*10^4) {
+
+    # Create data for plotting
+    dat <-  Fisher_2D_ExploreFigSims(z = z, h = h, reps = reps)
+
+    # Calculate Rbal for simulated data
+    Fs    <-  unique(dat$F)
+    Pbal  <-  c()
+    Ppos  <-  c()
+
+    # for outcrossers
+    sub       <-  subset(dat, F == Fs[1])
+    Pbal.out  <-  sum(sub$BalSel.out)/(sum(sub$BalSel.out) + sum(sub$PosSel.out))
+    Ppos.out  <-  sum(sub$PosSel.out)/(sum(sub$BalSel.out) + sum(sub$PosSel.out))
+    
+    for(i in 1:length(Fs)) {
+            sub      <-  subset(dat, F == Fs[i])
+            Pbal[i]  <-  sum(sub$BalSel.F) /  (sum(sub$BalSel.F) + sum(sub$PosSel.F))
+            Ppos[i]  <-  sum(sub$PosSel.F) /  (sum(sub$BalSel.F) + sum(sub$PosSel.F))
+    }
+    Pbal  <-  c(Pbal.out,Pbal)
+    Rbal.sim  <-  Pbal/Pbal.out
+    Fs  <-  c(0,Fs)
+
+    # Calculate Rbal for geometric approx.
+    Fs.app  <-  seq(0,1, by=0.01)
+    invC  <-  c()
+    balC  <-  c()
+    fBal.approx  <-  c()
+    for(i in 1:length(Fs.app)) {
+        invC[i]  <-  InvCircle_F(h=h, F=Fs.app[i], z=z)[2]
+        balC[i]  <-  PosCircle_F(h=h, F=Fs.app[i], z=z)[2]
+        radInv   <-  InvCircle_F(h=h, F=Fs.app[i], z=z)[2]
+        radPos   <-  PosCircle_F(h=h, F=Fs.app[i], z=z)[2]
+        fBal.approx[i]  <-  fBal_low_n_integral(rInv=radInv, rPos=radPos)
+        print(fBal_low_n_integral(rInv=radInv, rPos=radPos))
+    }
+    invArea  <-  pi*invC^2
+    posArea  <-  pi*balC^2
+    Rbal.approx  <-  ((invArea - posArea)) / ((invArea[1] - posArea[1]))
+#    Rbal.approx  <-  fBal.approx/fBal.approx[1]
+
+    # Colors
+    COL8  <-  c("#000000", "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7")
+
+    # Generate Plot
+    par(omi=c(1, 1, 0.75, 1), mar = c(5,5,1,1), bty='o', xaxt='s', yaxt='s')
+
+     # Panel (A) F = 0
+     plot(NA, axes=FALSE, type='n', main='', xlim = c(0,1), ylim = c(0,max(Rbal.sim, Rbal.approx)), ylab='', xlab='', cex.lab=1.2)
+        usr  <-  par('usr')
+        rect(usr[1], usr[3], usr[2], usr[4], col='white', border=NA)
+        plotGrid(lineCol='grey80')
+        box()
+        # Plot Points
+        smallMut_large_n  <-  rBal_smallMutLimit(F.I=Fs.app, h=1/2)
+        points(Rbal.sim ~ Fs, pch=21, col=transparentColor(COL8[3], opacity=1), bg=transparentColor(COL8[3], opacity=0.4))
+        lines(Rbal.approx ~ Fs.app, lwd=2, lty=2, col=transparentColor(COL8[1], opacity=0.6))
+        lines(smallMut_large_n ~ Fs.app, lwd=2, lty=3, col=transparentColor(COL8[1], opacity=0.6))
+        lines((1-Fs.app) ~ Fs.app, lwd=2, col=transparentColor(COL8[1], opacity=0.6))
+        # axes
+        axis(1, las=1)
+        axis(2, las=1)
+        # Plot labels etc.
+        proportionalLabel(0.5,  1.05,   expression(paste("Low-", italic(n))), cex=2, adj=c(0.5, 0.5), xpd=NA)
+        proportionalLabel(-0.2, 0.5,   expression(paste(italic(R)[italic(bal)])), cex=1.3, adj=c(0.5, 0.5), xpd=NA, srt=90)
+        proportionalLabel( 0.5,  -0.2,  expression(paste("Inbreeding coefficient (", italic(F), ")")), cex=1.3, adj=c(0.5, 0.5), xpd=NA)
+        # Legend
+        legend(
+               x       =  usr[2]*0.97,
+               y       =  usr[4]*0.99,
+               legend  =  c(expression(paste(1-italic(F))),
+                            expression(paste("Low-", italic(n), " approx.")),
+                            expression(paste("High-", italic(n), ", small mut."))),
+               lty     =  c(1,2,3),
+               lwd     =  2,
+               col     =  COL8[1],
+               cex     =  1,
+               xjust   =  1,
+               yjust   =  1,
+               bty     =  'n',
+               border  =  NA
+               )
+        legend(
+               x       =  usr[2]*0.77,
+               y       =  usr[4]*0.87,
+               legend  =  c(expression(paste("   Sims."))),
+               pch     =  21,
+               col     =  c(transparentColor(COL8[3], opacity=0.8)),
+               pt.bg   =  transparentColor(COL8[3], opacity=0.4),
+               pt.cex  =  1,
+               cex     =  1,
+               xjust   =  1,
+               yjust   =  1,
+               bty     =  'n',
+               border  =  NA
+               )
 }

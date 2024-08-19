@@ -597,7 +597,7 @@ Fisher_2D_ExploreFigSims  <-  function(z = 1, h = 1/2, reps=100, ...) {
 		# Inbreeding Coefficient
 		F  <-  F.I[i]
 		# Mutation size
-		Fisher.x  <-  runif(0.05, 5, n = reps)
+		Fisher.x  <-  runif(0.0, 5, n = reps)
 		r         <-  2*z*Fisher.x/sqrt(n)
 		# random mutations
 		muts   <-  matrix(data=rnorm(n*reps), nrow=reps, ncol=n)
@@ -627,10 +627,12 @@ Fisher_2D_ExploreFigSims  <-  function(z = 1, h = 1/2, reps=100, ...) {
 		PosSel.out  <-  as.numeric((out.cond2 + pos.cond) == 2)
 		BalSel.out  <-  as.numeric((out.cond1 + out.cond2) == 2)
 		# inbreeding
-#		BalSel.F    <-  as.numeric(hetAdvCondInbreeding2(F=F, s.het=s.het, s.hom=s.hom))
-		BalSel.F    <-  as.numeric(hetAdvCondInbreeding(F=F, t1=t.wt, t2=t.hom))
-		PosSel.F    <-  as.numeric(((1 - F)*s.het + F*s.hom) > 0 & BalSel.F == FALSE)
-		invade.F    <-  as.numeric(((1 - F)*s.het + F*s.hom) > 0)
+	    invade.F    <-  as.numeric(-F*s.hom < (1 - F)*s.het)
+	    cond2       <-  as.numeric((1 - F)*s.het > s.hom)
+		BalSel.F    <-  as.numeric((invade.F + cond2) == 2)
+		PosSel.F    <-  as.numeric((1 - F)*s.het < s.hom & BalSel.F == FALSE)
+#		BalSel.F    <-  as.numeric(hetAdvCondInbreeding(F=F, t1=t.wt, t2=t.hom))
+#		PosSel.F    <-  as.numeric((1 - F)*s.het < s.hom)# & BalSel.F == FALSE)
 		# Concatenate results
 		x.res           <-  c(x.res, Fisher.x)
 		F.res           <-  c(F.res, rep(F, times=length(BalSel.F)))
