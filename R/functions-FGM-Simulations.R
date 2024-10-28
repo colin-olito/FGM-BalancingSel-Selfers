@@ -21,7 +21,6 @@ relBalancingMutSize_Sims  <-  function(n = 50, z = 1, F = 1/2, h = 1/2, reps=10^
 
 	# Initial wild-type phenotype
 	A.wt = c(-z, rep(0, (n - 1))) 
-#	A.wt = rep(-z, (n - 1))
 	# Phenotypic optimum at 0
 	Opt = rep(0, n) 
 	# Vector of mutation sizes
@@ -36,7 +35,7 @@ relBalancingMutSize_Sims  <-  function(n = 50, z = 1, F = 1/2, h = 1/2, reps=10^
 		r = absolute.r[i]
 	    # random mutations
 	    muts   <-  matrix(data=rnorm(n*reps), nrow=reps, ncol=n)
-	        # het-/homo-zygote phenotypes
+	    # het-/homo-zygote phenotypes
 	    z.het  <-  apply(muts, MARGIN=1, function(x) {sqrt(sum((A.wt + r*h*x/sqrt(sum(x^2)) - Opt)^2))})
 		z.hom  <-  apply(muts, MARGIN=1, function(x) {sqrt(sum((A.wt + r*x/sqrt(sum(x^2)) - Opt)^2))})
 	    # het-/homo-zygote selection coefficients
@@ -70,33 +69,40 @@ relBalancingMutSize_Sims  <-  function(n = 50, z = 1, F = 1/2, h = 1/2, reps=10^
 }
 
 
-# Relative probability of balancing selection ~ Inbreeding Coefficient (F)
-# infinitesimal mutation size limit
+# Simulate relative probability of balancing selection (R_bal) ~ Inbreeding Coefficient (F)
+# For either small- or large-mutation limit
 # parameters
 # n = 50   --  no. dimensions
 # z = 1    --  wild-type displacement from optimum
 # h = 0.5  --  dominance
-relBalancingSmallx_F_Sims  <-  function(n = 50, z = 1, h = 1/2, reps=10^5) {
+# reps = 10^5  --  number of mutations to simulate
+# largeMut = FALSE -- Should new mutations all be small, or drawn from uniform distribution over x in (0,5)
+relBalancing_F_Sims  <-  function(n = 50, z = 1, h = 1/2, reps=10^5, largeMut = FALSE) {
 
 	# Initial wild-type phenotype
 	A.wt = c(-z, rep(0, (n - 1))) 
 	# Phenotypic optimum at 0
 	Opt = rep(0, n) 
 	# Mutation size
-	Fisher.x = 0.05
+	if(largeMut) {
+		Fisher.x = runif(0,5,n=reps)
+	} else(Fisher.x = rep(0.05, times=reps))
 	absolute.r = 2*z*Fisher.x/sqrt(n)
 	r  <-  absolute.r
 	# Inbreeding values
 	F.I  <-  1:11/11
-
 	# Vector for output values
 	rBal      <-  rep(0, times=length(F.I))
 	rBal.fav  <-  rep(0, times=length(F.I)) 
 	# random mutations
 	muts   <-  matrix(data=rnorm(n*reps), nrow=reps, ncol=n)
 	# het-/homo-zygote phenotypes
-	z.het  <-  apply(muts, MARGIN=1, function(x) {sqrt(sum((A.wt + r*h*x/sqrt(sum(x^2)) - Opt)^2))})
-	z.hom  <-  apply(muts, MARGIN=1, function(x) {sqrt(sum((A.wt + r*x/sqrt(sum(x^2)) - Opt)^2))})
+	z.het  <-  rep(0, times=reps)
+	z.hom  <-  rep(0, times=reps)	
+	for(j in 1:reps) {
+		z.het[j]      <-  sqrt(sum((A.wt + r[j]*h*muts[j,]/sqrt(sum(muts[j,]^2)) - Opt)^2))
+		z.hom[j]      <-  sqrt(sum((A.wt + r[j]*muts[j,]/sqrt(sum(muts[j,]^2)) - Opt)^2))
+	}
 	# het-/homo-zygote selection coefficients
 	s.het  <-  exp(-0.5*z.het^2)/exp(-0.5*z^2) - 1
 	s.hom  <-  exp(-0.5*z.hom^2)/exp(-0.5*z^2) - 1
@@ -106,7 +112,7 @@ relBalancingSmallx_F_Sims  <-  function(n = 50, z = 1, h = 1/2, reps=10^5) {
 	out.cond2  <-  as.numeric(s.het > 0)
 	PrBal      <-  sum((out.cond1 + out.cond2) == 2) / reps
 	# among favored mutations
-	PrInv       <-  sum(out.cond2 == 1) / reps
+	PrInv      <-  sum(out.cond2 == 1) / reps
 	fBal.fav   <-  PrBal / PrInv 
 	for(i in 1:length(F.I)){
 		# Inbreeding Coefficient
@@ -118,7 +124,7 @@ relBalancingSmallx_F_Sims  <-  function(n = 50, z = 1, h = 1/2, reps=10^5) {
 		# Relative probability of balancing selection
 		rBal[i]  <-  PrBal.F/PrBal
 		# among favoured mutations
-		PrInv.F     <-  sum(cond2 == 1) / reps
+		PrInv.F     <-  sum(cond1 == 1) / reps
 		fBal.F.fav  <-  PrBal.F / PrInv.F 
 		# Relative probability of balancing selection among favoured mutations
 		rBal.fav[i]  <-  fBal.F.fav/fBal.fav
@@ -237,7 +243,6 @@ relBalancingMutSize_EstabMuts_Sims  <-  function(Ne = 1000, n = 50, z = 1, F = 1
 		out.cond1  <-  as.numeric(s.hom.est < s.het.est)
 		out.cond2  <-  as.numeric(s.het.est > 0)
 	    fBal.est  <-  sum((out.cond1 + out.cond2) == 2) /reps
-#browser()		
 		## For Inbreeding
 		# vector for selection coefficients
 		s.het.est  <-  rep(0, times=reps)
@@ -272,7 +277,6 @@ relBalancingMutSize_EstabMuts_Sims  <-  function(Ne = 1000, n = 50, z = 1, F = 1
 
 		# Relative probability of balancing selection
 		rBal.est[i]  <-  fBal.F.est/fBal.est
-#browser()
 print(paste('mut. size ', i, "/", length(Fisher.x)))
 	}
  
@@ -354,7 +358,7 @@ relBalancingSmallx_EstabMuts_F_Sims  <-  function(Ne = 1000, n = 50, z = 1, h = 
 
 print(paste('Inbreeding Coefficient ', i, "/", length(F.I)))
 	}
-#browser()
+
 	# Relative probability of balancing selection
 	rBal.est  <-  fBal.F.est/fBal.F.est[1]
 	# Output dataframe
@@ -521,10 +525,6 @@ lower.classic = function(F, s.2){
   F*s.2
 }
 
-########### CONTINUE EDITING HERE ###########
-
-
-
 
 
 #################################################
@@ -550,10 +550,6 @@ hetAdvCondInbreeding <-  function(F, t1, t2) {
 	t2          <-  abs(t2)
 	cond2  <-  ( t2 <  (t1*(2 - S - 2*t1))/(S*(1 - 2*t1)) )
 	cond3  <-  ( t2 >  (1/2)*(1 - sqrt(1 - S + (S^2)*(1/2 - t1)^2) - S*(1/2 - t1)) )
-#	cond2  <-  (t1 < (t2*(F*t2 + t2 - 1) / (F*(2*t2 - 1))))
-#	cond3  <-  (t2 < (t1*(F*t1 + t1 - 1) / (F*(2*t1 - 1))))
-#	cond2  <-  (t1 > ((F + 1)*(-sqrt((F*(F*(4*(t2 - 1)*t2 + 3) + 2))/((F + 1)^2) ))+2*F*t2+1) / (2*(F+1)))
-#	cond3  <-  (t2 > ((F + 1)*(-sqrt((F*(F*(4*(t1 - 1)*t1 + 3) + 2))/((F + 1)^2) ))+2*F*t1+1) / (2*(F+1)))
 	(cond1 == 1 & (cond2 + cond3) == 2)
 }
 hetAdvCondInbreeding2 <-  function(F, s.het, s.hom) {
@@ -631,16 +627,14 @@ Fisher_2D_ExploreFigSims  <-  function(z = 1, h = 1/2, reps=100, ...) {
 	    cond2       <-  as.numeric((1 - F)*s.het > s.hom)
 		BalSel.F    <-  as.numeric((invade.F + cond2) == 2)
 		PosSel.F    <-  as.numeric((1 - F)*s.het < s.hom & BalSel.F == FALSE)
-#		BalSel.F    <-  as.numeric(hetAdvCondInbreeding(F=F, t1=t.wt, t2=t.hom))
-#		PosSel.F    <-  as.numeric((1 - F)*s.het < s.hom)# & BalSel.F == FALSE)
 		# Concatenate results
 		x.res           <-  c(x.res, Fisher.x)
 		F.res           <-  c(F.res, rep(F, times=length(BalSel.F)))
-		PosSel.out.res  <-  c(PosSel.out.res, PosSel.out) #rep(0, times=length(F.I)*length(Fisher.x)*reps)
-		BalSel.out.res  <-  c(BalSel.out.res, BalSel.out) #rep(0, times=length(F.I)*length(Fisher.x)*reps)
-		BalSel.F.res    <-  c(BalSel.F.res, BalSel.F) #rep(0, times=length(F.I)*length(Fisher.x)*reps)
-		PosSel.F.res    <-  c(PosSel.F.res, PosSel.F) #rep(0, times=length(F.I)*length(Fisher.x)*reps)
-		invade.F.res    <-  c(invade.F.res, invade.F) #rep(0, times=length(F.I)*length(Fisher.x)*reps)
+		PosSel.out.res  <-  c(PosSel.out.res, PosSel.out) 
+		BalSel.out.res  <-  c(BalSel.out.res, BalSel.out) 
+		BalSel.F.res    <-  c(BalSel.F.res, BalSel.F) 
+		PosSel.F.res    <-  c(PosSel.F.res, PosSel.F) 
+		invade.F.res    <-  c(invade.F.res, invade.F) 
 		s.het.res       <-  c(s.het.res, s.het)
 		s.hom.res       <-  c(s.hom.res, s.hom)
 		t.wt.res        <-  c(t.wt.res, t.wt)
@@ -664,4 +658,3 @@ Fisher_2D_ExploreFigSims  <-  function(z = 1, h = 1/2, reps=100, ...) {
 	return(res.df)
 }
 
-########### CONTINUE EDITING HERE ###########
