@@ -2,7 +2,7 @@
 
 ## Overview
 
-This is the GitHub repository for a theoretical population genetics research project with working title "*Effects of inbreeding on the probability of balancing selection: Insights from Fisher’s geometric model*" (doi to be provided after acceptance). Here you can find all of the computer code necessary to reproduce the simulations and main figures presented in the published paper and appendices. 
+This is the GitHub repository for a theoretical population genetics research project with working title "*Effects of inbreeding on the probability of balancing selection: Insights from Fisher’s geometric model*" (doi to be provided after acceptance). Here you can find all of the computer code necessary to reproduce the simulations and main figures presented in the published paper and appendices. The most current Version of Record is archived on Zenodo here: [![DOI](https://zenodo.org/badge/535606024.svg)](https://doi.org/10.5281/zenodo.14000423). 
 
 
 ## Abstract
