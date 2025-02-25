@@ -5,7 +5,7 @@ library(extrafont)
 library(fontcm)
 loadfonts(quiet = TRUE)
 library(wesanderson)
-library(plotrix)
+#library(TeachingDemos)
 
 #######################
 # AUXILLIARY FUNCTIONS
@@ -22,7 +22,7 @@ figPath  <-  function(name) {
 toDev <- function(expr, dev, filename, ..., verbose=TRUE) {
   if ( verbose )
     cat(sprintf('Creating %s\n', filename))
-    dev(filename, family="Times", ...)
+   dev(filename, family="Times", ...)
 #    dev(filename, family='Arial', ...)
     on.exit(dev.off())
     eval.parent(substitute(expr))
@@ -176,9 +176,659 @@ funb  <-  function(F,h) {
 
 ######################################
 # Figure 1.
-# Illustration of invasion conditions and proportion of parameter
+# (A) Illustration of invasion conditions and proportion of parameter
 # space permitting balancing selection under classic weak-selection
 # approximation
+# (B) Contribution of polymorphic locus to V_G under inbreeding
+VGHat  <-  function(s1, s2, F) {
+                pHat  <-  (s2 - F*s1)/((1 - F)*(s2 + s1))
+                pHat[pHat > 1]  <-  1
+                pHat[pHat < 0]  <-  0
+                qHat  <-  1-pHat
+                pHat*qHat*s1*s2*(1 - F^2)
+               }
+
+ExpVGHat  <-  function(F, smax) {
+                xterm= (1+F)/2
+                ( ((1 + F)^2 * (3 - 2*F - F^2))/(4*(1 - F)) + (1 + F)^3/(1 - F) * log(x=xterm) )*smax^2
+               }
+
+classicWkSel_VG_Fig  <-  function() {
+
+    # Set inbreeding values
+    F.I = c(0.1, 0.3, 0.5, 0.7, 0.9)
+
+    # Colors
+    COL8  <- c("#000000", "#E69F00", "#56B4E9", "#009E73", "#0072B2", "#D55E00", "#CC79A7")
+
+    # set plot layout
+    layout.mat  <-  matrix(c(1,2), nrow=1, ncol=2, byrow=TRUE)
+    layout      <-  layout(layout.mat,respect=TRUE)
+
+    # Generate Plot
+    par(omi=c(0.5, 0.5, 0.5, 0.5), mar = c(4,4,4,2), bty='o', xaxt='s', yaxt='s')
+     # Panel (A) Polymorphic space
+     plot(NA, axes=FALSE, type='n', main='',xlim = c(0,0.1), ylim = c(0,0.1), ylab='', xlab='', cex.lab=1.2)
+        usr  <-  par('usr')
+        rect(usr[1], usr[3], usr[2], usr[4], col='white', border=NA)
+        plotGrid(lineCol='grey80')
+        box()
+        # Generate Curves
+        s2  <-  0:1000/10000
+        for(i in 1:length(F.I)) {
+            upper  <-  upper.classic(F=F.I[i], s.2 = s2)
+            lower  <-  lower.classic(F=F.I[i], s.2 = s2)
+            lines(upper[upper < 0.1 ] ~ s2[upper < 0.1 ], lwd=2, col=COL8[i])
+            lines(lower ~ s2, lwd=2, col=COL8[i])
+        }
+        # axes
+        axis(1, las=1)
+        axis(2, las=1)
+        # Plot labels etc.
+        proportionalLabel(0.05,  1.075,  expression(paste("A")), cex=1.5, adj=c(0.5, 0.5), xpd=NA)
+        proportionalLabel(0.5,  1.175,   expression(paste("Parameter space")), cex=1.5, adj=c(0.5, 0.5), xpd=NA)
+        proportionalLabel(0.5,  1.075,   expression(paste("of balancing selection")), cex=1.5, adj=c(0.5, 0.5), xpd=NA)
+        proportionalLabel( -0.25,  0.5,  expression(paste("Selection against ", italic(aa), " ",(italic(s[2])))), cex=1.3, adj=c(0.5, 0.5), xpd=NA, srt=90)
+        proportionalLabel( 0.5,  -0.25,  expression(paste("Selection against ", italic(AA), " ",(italic(s[1])))), cex=1.3, adj=c(0.5, 0.5), xpd=NA)        
+        proportionalLabel( 0.875,  0.17, expression(paste(italic(F), " = ", 0.1)), cex=1.2, adj=c(0.5, 0.5), xpd=NA, srt=8, col=COL8[1])
+        proportionalLabel( 0.875,  0.33, expression(paste(italic(F), " = ", 0.3)), cex=1.2, adj=c(0.5, 0.5), xpd=NA, srt=13, col=COL8[2])
+        proportionalLabel( 0.875,  0.5,  expression(paste(italic(F), " = ", 0.5)), cex=1.2, adj=c(0.5, 0.5), xpd=NA, srt=25, col=COL8[3])
+        proportionalLabel( 0.875,  0.67, expression(paste(italic(F), " = ", 0.7)), cex=1.2, adj=c(0.5, 0.5), xpd=NA, srt=30, col=COL8[4])
+        proportionalLabel( 0.875,  0.84, expression(paste(italic(F), " = ", 0.9)), cex=1.2, adj=c(0.5, 0.5), xpd=NA, srt=40, col=COL8[5])
+
+     # Panel (B) Genetic Variance under the classic model
+    # Set inbreeding values
+    Fvals = 0:100/100
+    smax  = 0.1     
+     plot(NA, axes=FALSE, type='n', main='', xlim = c(0,1), ylim = c(0,1), ylab='', xlab='', cex.lab=1.2)
+        usr  <-  par('usr')
+        rect(usr[1], usr[3], usr[2], usr[4], col='white', border=NA)
+        plotGrid(lineCol='grey80')
+        box()
+        # Generate Curves
+        expVG  <-  ExpVGHat(smax=smax, F=Fvals)
+        expVG.out  <-  ExpVGHat(smax=smax, F=0)
+        points(expVG/expVG.out ~ Fvals, type='l', lwd=2, col=COL8[1])
+        #  Calculate E[\hat{V}_G] from simulated selection coefficients
+        F.sim      <-  0:10/10
+        expVG.sim  <- c()
+        for(i in 1:length(F.sim)) {
+            s1vals        <-  runif(min=0, max=smax, n=10^6)
+            s2vals        <-  runif(min=0, max=smax, n=10^6)
+            VGvals        <-  VGHat(s1=s1vals, s2=s2vals, F=F.sim[i])
+            expVG.sim[i]  <-  mean(VGvals)
+        }
+        points((expVG.sim[c(1,3,5,7,9,11)]/expVG.sim[1]) ~ F.sim[c(1,3,5,7,9,11)], pch=21, col=transparentColor(COL8[1], opacity=0.5), bg=transparentColor(COL8[1], opacity=0.4), cex=1.5)
+        points((expVG.sim[2]/expVG.sim[1]) ~ F.sim[2], pch=21, col=COL8[1], bg=transparentColor(COL8[1], opacity=0.8), cex=1.5)
+            segments(x0=F.sim[2], F.sim[2], y0=0, x1 = F.sim[2], y1 = (expVG.sim[2]/expVG.sim[1]), lty=2, lwd=2, col=transparentColor(COL8[1], opacity=0.8))
+        points((expVG.sim[4]/expVG.sim[1]) ~ F.sim[4], pch=21, col=COL8[2], bg=transparentColor(COL8[2], opacity=0.8), cex=1.5)
+            segments(x0=F.sim[4], F.sim[4], y0=0, x1 = F.sim[4], y1 = (expVG.sim[4]/expVG.sim[1]), lty=2, lwd=2, col=transparentColor(COL8[2], opacity=0.8))
+        points((expVG.sim[6]/expVG.sim[1]) ~ F.sim[6], pch=21, col=COL8[3], bg=transparentColor(COL8[3], opacity=0.8), cex=1.5)
+            segments(x0=F.sim[6], F.sim[6], y0=0, x1 = F.sim[6], y1 = (expVG.sim[6]/expVG.sim[1]), lty=2, lwd=2, col=transparentColor(COL8[3], opacity=0.8))
+        points((expVG.sim[8]/expVG.sim[1]) ~ F.sim[8], pch=21, col=COL8[4], bg=transparentColor(COL8[4], opacity=0.8), cex=1.5)
+            segments(x0=F.sim[8], F.sim[8], y0=0, x1 = F.sim[8], y1 = (expVG.sim[8]/expVG.sim[1]), lty=2, lwd=2, col=transparentColor(COL8[4], opacity=0.8))
+        points((expVG.sim[10]/expVG.sim[1]) ~ F.sim[10], pch=21, col=COL8[5], bg=transparentColor(COL8[5], opacity=0.8), cex=1.5)
+            segments(x0=F.sim[10], F.sim[10], y0=0, x1 = F.sim[10], y1 = (expVG.sim[10]/expVG.sim[1]), lty=2, lwd=2, col=transparentColor(COL8[5], opacity=0.8))
+        # axes
+        axis(1, las=1)
+        axis(2, las=1)
+        # Plot labels etc.
+        proportionalLabel(0.05,  1.075,   expression(paste("B")), cex=1.5, adj=c(0.5, 0.5), xpd=NA)
+        proportionalLabel(0.5,  1.175,   expression(paste("Expected contribution")), cex=1.5, adj=c(0.5, 0.5), xpd=NA)
+        proportionalLabel(0.5,  1.075,   expression(paste("to genetic variance")), cex=1.5, adj=c(0.5, 0.5), xpd=NA)
+        proportionalLabel(-0.25,  0.5,   expression(paste("E[", italic(V[G]), "] / E[", italic(V[G])," | ", italic(F)==0, "]")), cex=1.3, adj=c(0.5, 0.5), xpd=NA, srt=90)        
+#        proportionalLabel(-0.25,  0.5,   expression(E*group("(",hat(V)[G],")")/E*group("(",hat(V)[G]*" | "*F==0,")"), cex=1.3, adj=c(0.5, 0.5), xpd=NA, srt=90)
+        proportionalLabel( 0.5,  -0.25,  expression(paste("Inbreeding coefficient (", italic(F), ")")), cex=1.3, adj=c(0.5, 0.5), xpd=NA)
+
+}
+
+
+
+######################################
+# Figure 2.
+# Balancing Selection among new mutations
+PrBalPredNewMut = function(x, a, b){
+  0.5*(erf(a*x/sqrt(2)) - erf(b*x/sqrt(2)))
+}
+
+R.new.smallMut = function(F, h){
+  (1 - F^2)*h*(1 - h)/((F + (1 - F)*h)*(1 - (1 - F)*h))
+}
+R.new.largeMut = function(F, h){
+  (1 - F^2)*h^2*(1 - h^2)/((F + (1 - F)*h^2)*(1 - (1 - F)*h^2))
+}
+
+BalSelNewMutationsFig  <-  function(xAvg = 2, n = 50, z = 1, F = 1/2, h = 1/2, reps=10^5, inclSmallMuts=FALSE) {
+
+    # Colors
+    COL8  <- c("#000000", "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7")
+
+    # set plot layout
+    layout.mat  <-  matrix(c(1,2), nrow=1, ncol=2, byrow=TRUE)
+    layout      <-  layout(layout.mat,respect=TRUE)
+
+    # Generate data to plot
+    x.series    <- c(0.05, seq(0.25,5,0.25))
+    Pr.bal.sim  <-  vector()
+    Fvals       <-  c(0, 0.25, 0.5)
+    O = rep(0, n) #optimal phenotype
+    A = c(-z, rep(0, n - 1)) #wild-type phenotype
+    for(f in 1:length(Fvals)) {
+        s.het = vector()
+        s.hom = vector()
+        for(j in 1:length(x.series)){
+        r = x.series[j]*(2*z)/sqrt(n)
+            for(i in 1:reps){
+                mut = rnorm(n)
+                A.het = A + r*h*mut/sqrt(sum(mut^2))
+                z.het = sqrt(sum((A.het - O)^2))
+                A.hom = A + r*mut/sqrt(sum(mut^2))
+                z.hom = sqrt(sum((A.hom - O)^2))
+                s.het[i] = exp(-z.het^2/2)/exp(-z^2/2) - 1
+                s.hom[i] = exp(-z.hom^2/2)/exp(-z^2/2) - 1
+                }
+            Pr.bal.sim  <-  c(Pr.bal.sim, sum(s.het*(1 - Fvals[f]) > s.hom & s.het*(1 - Fvals[f]) > -Fvals[f]*s.hom)/reps)
+            }
+        }
+        plotDat  <-  as.data.frame(cbind(Pr.bal.sim, rep(x.series, times=3), rep(Fvals, each=length(x.series))))
+        names(plotDat)  <-  c("Pr.bal.sim", "xSeries", "F")
+    # Generate predicted lines
+    pred.x  <-  c(0:100)/20
+    Pred1  <-  PrBalPredNewMut(x=pred.x, a=funa(F=Fvals[1], h=1/2), b=funb(F=Fvals[1], h=1/2))
+    Pred2  <-  PrBalPredNewMut(x=pred.x, a=funa(F=Fvals[2], h=1/2), b=funb(F=Fvals[2], h=1/2))
+    Pred3  <-  PrBalPredNewMut(x=pred.x, a=funa(F=Fvals[3], h=1/2), b=funb(F=Fvals[3], h=1/2))
+
+    # set plot layout
+    layout.mat  <-  matrix(c(1,2), nrow=1, ncol=2, byrow=TRUE)
+    layout      <-  layout(layout.mat,respect=TRUE)
+
+    # Create L=Plot
+    par(omi=c(0.5, 0.5, 0.5, 0.5), mar = c(4,4,4,2), bty='o', xaxt='s', yaxt='s')
+     # Panel (A) Polymorphic space
+     plot(NA, axes=FALSE, type='n', main='',xlim = c(0,5), ylim = c(0,0.25), ylab='', xlab='', cex.lab=1.2)
+        usr  <-  par('usr')
+        rect(usr[1], usr[3], usr[2], usr[4], col='white', border=NA)
+        plotGrid(lineCol='grey80')
+        box()
+        # Predicted Curves
+        lines(Pred1 ~ pred.x, lwd=2, col = COL8[1])
+        lines(Pred2 ~ pred.x, lwd=2, col = COL8[2])
+        lines(Pred3 ~ pred.x, lwd=2, col = COL8[3])
+        # Simulation Points
+        points(Pr.bal.sim[F==0] ~ xSeries[F==0], pch=21, col = transparentColor(COL8[1], opacity=0.8), bg = transparentColor(COL8[1], opacity=0.5), data=plotDat)
+        points(Pr.bal.sim[F==0.25] ~ xSeries[F==0.25], pch=21, col = transparentColor(COL8[2], opacity=0.8), bg = transparentColor(COL8[2], opacity=0.5), data=plotDat)
+        points(Pr.bal.sim[F==0.5] ~ xSeries[F==0.5], pch=21, col = transparentColor(COL8[3], opacity=0.8), bg = transparentColor(COL8[3], opacity=0.5), data=plotDat)
+        # axes
+        axis(1, las=1)
+        axis(2, las=1)
+        # Plot labels etc.
+        proportionalLabel(0.05,  1.05,   expression(paste("A")), cex=1.5, adj=c(0.5, 0.5), xpd=NA)
+        proportionalLabel( -0.25,  0.5, expression(paste("Pr(bal. | ", italic(x), ")")), cex=1.3, adj=c(0.5, 0.5), xpd=NA, srt=90)
+        proportionalLabel( 0.5,  -0.25, expression(paste("Scaled mutation size (", italic(x), ")")), cex=1.3, adj=c(0.5, 0.5), xpd=NA)        
+        # Legend
+        legend(
+               x       =  usr[2]*0.78,
+               y       =  usr[4]*0.99,
+               legend  =  c(expression(paste(" ")),
+                            expression(paste(" ")),
+                            expression(paste(" "))),
+               lty     =  1,
+               lwd     =  2,
+               col     =  c(COL8[1], COL8[2], COL8[3]),
+               cex     =  1,
+               xjust   =  1,
+               yjust   =  1,
+               bty     =  'n',
+               border  =  NA
+               )
+        legend(
+               x       =  usr[2]*0.99,
+               y       =  usr[4]*0.99,
+               legend  =  c(expression(italic(F)==0.0),
+                            expression(italic(F)==0.25),
+                            expression(italic(F)==0.5)),
+               pch     =  21,
+               col     =  c(transparentColor(COL8[1], opacity=0.8),
+                            transparentColor(COL8[2], opacity=0.8),
+                            transparentColor(COL8[3], opacity=0.8)),
+               pt.bg   =  c(transparentColor(COL8[1], opacity=0.5),
+                            transparentColor(COL8[2], opacity=0.5),
+                            transparentColor(COL8[3], opacity=0.5)),
+               pt.cex  =  1,
+               cex     =  1,
+               xjust   =  1,
+               yjust   =  1,
+               bty     =  'n',
+               border  =  NA
+               )
+
+    # Generate data to plot
+    F.series    <- c(0:100)/100
+    if(inclSmallMuts) {
+        R.new.smallMut.Sims.h0.5  <-  relBalancing_F_Sims(xAvg = xAvg, h = 1/2)
+        R.new.smallMut.Sims.h0.1  <-  relBalancing_F_Sims(xAvg = xAvg, h = 1/10)
+    }
+    R.new.largeMut.Sims.h0.5  <-  relBalancing_F_Sims(xAvg = xAvg, h = 1/2, largeMut=TRUE)
+    R.new.largeMut.Sims.h0.1  <-  relBalancing_F_Sims(xAvg = xAvg, h = 1/10, largeMut=TRUE)
+
+     # Panel (B) Rbal for new mutations
+     plot(NA, axes=FALSE, type='n', main='',xlim = c(0,1), ylim = c(0,1), ylab='', xlab='', cex.lab=1.2)
+        usr  <-  par('usr')
+        rect(usr[1], usr[3], usr[2], usr[4], col='white', border=NA)
+        plotGrid(lineCol='grey80')
+        box()
+        # Predicted Curves
+        if(inclSmallMuts){
+            lines(R.new.smallMut(F=F.series, h=0.5) ~ F.series, lty=1, lwd=2, col = COL8[2])
+            lines(R.new.smallMut(F=F.series, h=0.1) ~ F.series, lty=1, lwd=2, col = COL8[3])
+            points(rBal ~ F, pch=21, col = transparentColor(COL8[2], opacity=0.8), bg = transparentColor(COL8[2], opacity=0.5), data=R.new.smallMut.Sims.h0.5)
+            points(rBal ~ F, pch=21, col = transparentColor(COL8[3], opacity=0.8), bg = transparentColor(COL8[3], opacity=0.5), data=R.new.smallMut.Sims.h0.1)
+            lines(R.new.largeMut(F=F.series, h=0.5) ~ F.series, lty=2, lwd=2, col = COL8[2])
+            lines(R.new.largeMut(F=F.series, h=0.1) ~ F.series, lty=2, lwd=2, col = COL8[3])
+        }
+        if(!inclSmallMuts){
+            lines(R.new.largeMut(F=F.series, h=0.5) ~ F.series, lty=1, lwd=2, col = COL8[2])
+            lines(R.new.largeMut(F=F.series, h=0.1) ~ F.series, lty=1, lwd=2, col = COL8[3])
+        }
+        lines((1 - F.series) ~ F.series, lwd=2, col = COL8[1])
+        # Simulation Points
+        points(rBal ~ F, pch=21, col = transparentColor(COL8[2], opacity=0.8), bg = transparentColor(COL8[2], opacity=0.5), data=R.new.largeMut.Sims.h0.5)
+        points(rBal ~ F, pch=21, col = transparentColor(COL8[3], opacity=0.8), bg = transparentColor(COL8[3], opacity=0.5), data=R.new.largeMut.Sims.h0.1)
+        # axes
+        axis(1, las=1)
+        axis(2, las=1)
+        # Plot labels etc.
+        proportionalLabel(0.05,  1.05,   expression(paste("B")), cex=1.5, adj=c(0.5, 0.5), xpd=NA)
+        proportionalLabel(-0.25,  0.5,  expression(paste("Relative fraction (", italic(R[new]), ")")), cex=1.3, adj=c(0.5, 0.5), xpd=NA, srt=90)        
+        proportionalLabel( 0.5,  -0.25,  expression(paste("Inbreeding coefficient (", italic(F), ")")), cex=1.3, adj=c(0.5, 0.5), xpd=NA)
+        # Legend
+        if(inclSmallMuts){
+        legend(
+               x       =  usr[2]*0.55,
+               y       =  usr[4]*0.99,
+               legend  =  c(" ",
+                            " ",
+                            " ",
+                            " ",
+                            " "),
+               lty     =  c(1, 1, 2, 1, 2),
+               lwd     =  2,
+               col     =  c(COL8[1],
+                            COL8[2],
+                            COL8[2],
+                            COL8[3],
+                            COL8[3]),
+               cex     =  1,
+               xjust   =  1,
+               yjust   =  1,
+               bty     =  'n',
+               border  =  NA
+               )
+        # Legend
+        legend(
+               x       =  usr[2],
+               y       =  usr[4]*0.99,
+               legend  =  c(expression(paste(1-italic(F))),
+                            expression(paste("small-", italic(x), " (", italic(nu)==0.5,")", sep="")),
+                            expression(paste("variable-", italic(x), " (", italic(nu)==0.5,")", sep="")),
+                            expression(paste("small-", italic(x), " (", italic(nu)==0.1,")", sep="")),
+                            expression(paste("variable-", italic(x), " (", italic(nu)==0.1,")", sep=""))),
+               pch     =  21,
+               pt.bg   =  c(NA,
+                            transparentColor(COL8[2], opacity=0.5),
+                            transparentColor(COL8[2], opacity=0.5),
+                            transparentColor(COL8[3], opacity=0.5),
+                            transparentColor(COL8[3], opacity=0.5)),
+               col     =  c(NA,
+                            COL8[2],
+                            COL8[2],
+                            COL8[3],
+                            COL8[3]),
+               cex     =  1,
+               xjust   =  1,
+               yjust   =  1,
+               bty     =  'n',
+               border  =  NA
+               )
+           }
+    if(!inclSmallMuts) {
+        legend(
+               x       =  usr[2]*0.825,
+               y       =  usr[4]*0.99,
+               legend  =  c(" ",
+                            " ",
+                            " "),
+               lty     =  c(1, 1, 1),
+               lwd     =  2,
+               col     =  c(COL8[1],
+                            COL8[2],
+                            COL8[3]),
+               cex     =  1,
+               xjust   =  1,
+               yjust   =  1,
+               bty     =  'n',
+               border  =  NA
+               )
+        # Legend
+        legend(
+               x       =  usr[2],
+               y       =  usr[4]*0.99,
+               legend  =  c(expression(paste(1-italic(F))),
+                            expression(paste(italic(nu)==0.5, sep="")),
+                            expression(paste(italic(nu)==0.1, sep=""))),
+               pch     =  21,
+               pt.bg   =  c(NA,
+                            transparentColor(COL8[2], opacity=0.5),
+                            transparentColor(COL8[3], opacity=0.5)),
+               col     =  c(NA,
+                            COL8[2],
+                            COL8[3]),
+               cex     =  1,
+               xjust   =  1,
+               yjust   =  1,
+               bty     =  'n',
+               border  =  NA
+               )
+    }
+}
+
+
+######################################
+# Figure 3. Ratio of balancing selection among 
+#           Favoured Mutations
+
+# Ancillary functions for this figure
+Pr.inv.F  <-  function(x, F.I, h){
+  b  <-  (F.I + (1 - F.I)*h^2)/(F.I + (1 - F.I)*h)
+  1 - pnorm(x*b)
+}
+Pr.bal.F = function(x, F.I, h){
+  a  <-  (1 - (1 - F.I)*h^2)/(1 - (1 - F.I)*h)
+  b  <-  (F.I + (1 - F.I)*h^2)/(F.I + (1 - F.I)*h)
+  pnorm(x*a) - pnorm(x*b)
+}
+Pr.pos.F = function(x, F.I, h){
+  a  <-  (1 - (1 - F.I)*h^2)/(1 - (1 - F.I)*h)
+  1 - pnorm(x*a)
+}
+Pr.inv = function(x, h){
+  b  <-  h
+  1 - pnorm(x*b)
+}
+Pr.bal = function(x, h){
+  a  <-  (1 + h)
+  b  <-  h
+  pnorm(x*a) - pnorm(x*b)
+}
+Pr.pos = function(x, h){
+  a  <-  (1 + h)
+  b  <-  h
+  1 - pnorm(x*a)
+}
+#Rbal_smallMutLimit  <-  function(F.I, h){
+#    (1 - F.I)*h*(1 - h)*(1/(1 - (1 - F.I)*h) + 1/(F.I + (1 - F.I)*h))
+#}
+Rbal_smallMutLimit  <-  function(F, h){
+    ((1 - F^2)*h*(1 - h)) / ((F + (1 - F)*h) * (1 - (1 - F)*h))
+}
+
+Rbal_largex_fav  <-  function(F, h) {
+    ((1 - F^2)*h*(1 - h^2)) / ((F + (1 - F)*h) * (1 - (1 - F)*h^2))
+
+}
+
+# Ratio of inbred/outcross balancing selection
+RelBalancingFavored_Fig  <-  function(xAvg = 1, favouredMuts = TRUE) {
+    
+    # Colors
+    COL8  <- c("#000000", "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7")
+
+    # set plot layout
+    layout.mat  <-  matrix(1, nrow=1, ncol=1, byrow=TRUE)
+    layout      <-  layout(layout.mat,respect=TRUE)
+
+    # Generate Plot
+    par(omi=c(0.5, 0.5, 0.5, 0.5), mar = c(4,4,4,1), bty='o', xaxt='s', yaxt='s')
+     # Panel (A) -- Small Mutation Limit 
+     # Proportion of parameter space where balancing selection occurs
+    F.values = 0:100/100
+    h.i = c(0.5, 0.25, 0.1)
+     # Panel (A) -- Variable Mutation Size 
+     # Proportion of parameter space where balancing selection occurs
+    plot(NA, axes=FALSE, type='n', main='',xlim = c(0,1), ylim = c(0,1), ylab='', xlab='', cex.lab=1.2)
+        usr  <-  par('usr')
+        rect(usr[1], usr[3], usr[2], usr[4], col='white', border=NA)
+        plotGrid(lineCol='grey80')
+        box()
+        # Generate Lines + points
+        lines(Rbal_largex_fav(F = F.values, h = h.i[1]) ~ F.values, type = "l", xlab = "inbreeding coefficient (F)", ylab = "reduction in Pr(bal.)", col = COL8[2], lwd = 3)
+        lines(Rbal_largex_fav(F = F.values, h = h.i[2]) ~ F.values, type = "l", xlab = "inbreeding coefficient (F)", ylab = "reduction in Pr(bal.)", col = COL8[3], lwd = 3)
+        lines(Rbal_largex_fav(F = F.values, h = h.i[3]) ~ F.values, type = "l", xlab = "inbreeding coefficient (F)", ylab = "reduction in Pr(bal.)", col = COL8[4], lwd = 3)
+        lines((1 - F.values) ~ F.values, col = COL8[1], lwd = 3)
+        # Simulations
+        RbalSim_h1  <-  relBalancing_F_Sims(xAvg=xAvg, h=1/2, largeMut = TRUE)
+        RbalSim_h2  <-  relBalancing_F_Sims(xAvg=xAvg, h=1/4, largeMut = TRUE)
+        RbalSim_h3  <-  relBalancing_F_Sims(xAvg=xAvg, h=1/10, largeMut = TRUE)
+        if(favouredMuts) {
+            points(rBal.fav ~ F, pch=21, col=transparentColor(COL8[2], opacity=0.6), bg=transparentColor(COL8[2], opacity=0.4), data=RbalSim_h1)
+            points(rBal.fav ~ F, pch=21, col=transparentColor(COL8[3], opacity=0.6), bg=transparentColor(COL8[3], opacity=0.4), data=RbalSim_h2)
+            points(rBal.fav ~ F, pch=21, col=transparentColor(COL8[4], opacity=0.6), bg=transparentColor(COL8[4], opacity=0.4), data=RbalSim_h3)
+            } else {
+            points(rBal ~ F, pch=21, col=transparentColor(COL8[2], opacity=0.6), bg=transparentColor(COL8[2], opacity=0.4), data=RbalSim_h1)
+            points(rBal ~ F, pch=21, col=transparentColor(COL8[3], opacity=0.6), bg=transparentColor(COL8[3], opacity=0.4), data=RbalSim_h2)
+            points(rBal ~ F, pch=21, col=transparentColor(COL8[4], opacity=0.6), bg=transparentColor(COL8[4], opacity=0.4), data=RbalSim_h3)
+        }
+        # axes
+        axis(1, las=1)
+        axis(2, las=1)
+        # Plot labels etc.
+#        proportionalLabel(0.05,  1.075,   expression(paste("B")), cex=1.5, adj=c(0.5, 0.5), xpd=NA)
+#        proportionalLabel(0.5,  1.075,   expression(paste("Variable mutation size", sep="")), cex=1.5, adj=c(0.5, 0.5), xpd=NA)        
+        proportionalLabel(-0.25,  0.5,  expression(paste("Relative fraction (", italic(R[adapt.]), ")")), cex=1.3, adj=c(0.5, 0.5), xpd=NA, srt=90)        
+        proportionalLabel( 0.5,  -0.25,  expression(paste("Inbreeding coefficient (", italic(F), ")")), cex=1.3, adj=c(0.5, 0.5), xpd=NA)
+        # Legend
+        legend(
+               x       =  usr[2]*0.82,
+               y       =  usr[4]*0.99,
+               legend  =  c(" ",
+                            " ",
+                            " ",
+                            " "),
+               lty     =  1,
+               lwd     =  3,
+               col     =  c(COL8[1], COL8[2], COL8[3], COL8[4]),
+               cex     =  1,
+               xjust   =  1,
+               yjust   =  1,
+               bty     =  'n',
+               border  =  NA
+               )
+        # Legend
+        legend(
+               x       =  usr[2]*0.99,
+               y       =  usr[4]*0.99,
+               legend  =  c(expression(paste(1-italic(F))),
+                            expression(paste(italic(nu)==1/2)),
+                            expression(paste(italic(nu)==1/4)),
+                            expression(paste(italic(nu)==1/10))),
+               pch     =  21,
+               pt.bg   =  c(NA,
+                            transparentColor(COL8[2], opacity=0.5),
+                            transparentColor(COL8[3], opacity=0.5),
+                            transparentColor(COL8[4], opacity=0.5)),
+               col     =  c(NA,
+                            COL8[2],
+                            COL8[3],
+                            COL8[4]),
+               cex     =  1,
+               xjust   =  1,
+               yjust   =  1,
+               bty     =  'n',
+               border  =  NA
+               )
+}
+
+
+
+# Summary Figure showing small & large mutation size results
+# for the relative fraction of favored and established mutations
+# under balancing selection
+
+# Ancillary functions for this figure
+Rbal_largeMut_est  <-  function(F) {
+    (27* (1 - F)^2 * (7*F + 5)) / (5*(3 + F)^3 )
+}
+
+
+# Summary Figure for ratio of inbred/outcross balancing selection
+RelBalancing_SummaryFig_wVG  <-  function(xAvg = 2, h=1/2, Ne = 10^4, sim.reps=10^3) {
+    
+    # Import VG data
+    dat1     <-  read.csv(file="./out/EstabMut_VG_xBar1_Ne1000_n50_z1_h0.5_nMuts1e+07.csv", header=TRUE)    
+    dat2     <-  read.csv(file="./out/EstabMut_VG_xBar5_Ne1000_n50_z1_h0.5_nMuts1e+07.csv", header=TRUE)    
+
+    # Inbreeding values
+    F.values = 0:100/100
+
+    # Colors
+    COL8  <- c("#000000", "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7")
+
+    # set plot layout
+    layout.mat  <-  matrix(c(1,2), nrow=1, ncol=2, byrow=TRUE)
+    layout      <-  layout(layout.mat,respect=TRUE)
+
+    # Generate Plot
+    par(omi=c(0.5, 0.5, 0.5, 0.5), mar = c(4,4,4,2), bty='o', xaxt='s', yaxt='s')
+     # Ratio of Balancing selection for inbreeding to outcrossing
+     plot(NA, axes=FALSE, type='n', main='',xlim = c(0,1), ylim = c(0,1), ylab='', xlab='', cex.lab=1.2)
+        usr  <-  par('usr')
+        rect(usr[1], usr[3], usr[2], usr[4], col='white', border=NA)
+        plotGrid(lineCol='grey80')
+        box()
+        # Generate Curves
+            # Favoured mutations
+            lines(Rbal_largex_fav(F=F.values, h=1/2) ~ F.values, lty = 1, lwd = 3, col = COL8[2])
+            # Established mutations
+            lines(Rbal_largeMut_est(F=F.values) ~ F.values, lty = 1, lwd = 3, col = COL8[3])
+        # Simulations
+            RbalSim.F        <-  read.csv("./out/relBal_variable_x_EstabMuts_xAvg5_Ne1e+05_n50_z1_h0.5_reps10000.csv", header=TRUE)
+            RbalSim.large    <-  relBalancing_F_Sims(xAvg=xAvg, h=1/2, largeMut = TRUE)
+            points(rBal.fav ~ F, pch=21, col=transparentColor(COL8[2], opacity=0.6), bg=transparentColor(COL8[2], opacity=0.4), data=RbalSim.large)
+            points(rBal.est ~ F, pch=21, col=transparentColor(COL8[3], opacity=0.9), bg=transparentColor(COL8[3], opacity=0.4), data=RbalSim.F)
+            # Naive expectation
+            lines((1 - F.values) ~ F.values, col = COL8[1], lwd = 3)
+        # axes
+        axis(1, las=1)
+        axis(2, las=1)
+        # Plot labels etc.
+        proportionalLabel(0.05,  1.05,   expression(paste("A")), cex=1.5, adj=c(0.5, 0.5), xpd=NA)
+        proportionalLabel(0.5,  1.175,   expression(paste("Relative probability")), cex=1.5, adj=c(0.5, 0.5), xpd=NA)
+        proportionalLabel(0.5,  1.075,   expression(paste("of balancing selection")), cex=1.5, adj=c(0.5, 0.5), xpd=NA)
+        proportionalLabel(-0.25,  0.5,  expression(paste("Relative fraction (", italic(R[bal.]), ")")), cex=1.3, adj=c(0.5, 0.5), xpd=NA, srt=90)        
+        proportionalLabel( 0.5,  -0.25,  expression(paste("Inbreeding coefficient (", italic(F), ")")), cex=1.3, adj=c(0.5, 0.5), xpd=NA)
+        # Legends
+        legend(
+               x       =  usr[2]*0.73,
+               y       =  usr[4],
+               legend  =  c(" ", " ", " "),
+               lty     =  1,
+               lwd     =  3,
+               col     =  c(COL8[1], COL8[2], COL8[3]),
+               cex     =  1,
+               xjust   =  1,
+               yjust   =  1,
+               bty     =  'n',
+               border  =  NA
+               )
+        legend(
+               x       =  usr[2],
+               y       =  usr[4],
+               legend  =  c(expression(paste(1-italic(F))),
+                            expression(paste("Adaptive")),
+                            expression(paste("Established"))),
+               pch     =  21,
+               pt.bg   =  c(NA, 
+                            transparentColor(COL8[2], opacity=0.5), 
+                            transparentColor(COL8[3], opacity=0.5)),
+               col     =  c(NA,
+                            COL8[2],
+                            COL8[3]),
+               cex     =  1,
+               xjust   =  1,
+               yjust   =  1,
+               bty     =  'n',
+               border  =  NA
+               )
+
+
+     # Panel (B) VG contributed by established loci
+     plot(NA, axes=FALSE, type='n', main='', xlim = c(0,1), ylim = c(0,1), ylab='', xlab='', cex.lab=1.2)
+        usr  <-  par('usr')
+        rect(usr[1], usr[3], usr[2], usr[4], col='white', border=NA)
+        plotGrid(lineCol='grey80')
+        box()
+        # Generate Curves
+        relVG  <-  relative_VG(F=F.values)
+        points(relVG ~ F.values, type='l', lwd=2, col=COL8[1])
+        #  Calculate E[\hat{V}_G] from simulated selection coefficients
+        lines((ExpVG/ExpVG[1]) ~ F, lty=2, lwd=2, col=transparentColor(COL8[1], opacity=0.6), data=dat1)
+        points((ExpVG/ExpVG[1]) ~ F, pch=21, col=COL8[1], bg=transparentColor(COL8[1], opacity=0.6), cex=1.5, data=dat1)
+        lines((ExpVG/ExpVG[1]) ~ F, lty=2, lwd=2, col=transparentColor(COL8[1], opacity=0.3), data=dat2)
+        points((ExpVG/ExpVG[1]) ~ F, pch=21, col=transparentColor(COL8[1], opacity=0.6), bg=transparentColor(COL8[1], opacity=0.3), cex=1.5, data=dat2)
+        # axes
+        axis(1, las=1)
+        axis(2, las=1)
+        # Plot labels etc.
+        proportionalLabel(0.05,  1.05,   expression(paste("B")), cex=1.5, adj=c(0.5, 0.5), xpd=NA)
+        proportionalLabel(0.5,  1.175,   expression(paste("Expected contribution")), cex=1.5, adj=c(0.5, 0.5), xpd=NA)
+        proportionalLabel(0.5,  1.075,   expression(paste("to genetic variance")), cex=1.5, adj=c(0.5, 0.5), xpd=NA)
+        proportionalLabel(-0.2,  0.5,   expression(paste("E[", italic(V[G]), "] / E[", italic(V[G]),"; ",italic(F)==0, "]")), cex=1.3, adj=c(0.5, 0.5), xpd=NA, srt=90)        
+        proportionalLabel( 0.5,  -0.25,  expression(paste("Inbreeding coefficient (", italic(F), ")")), cex=1.3, adj=c(0.5, 0.5), xpd=NA)
+        # Legend
+        legend(
+               x       =  usr[2]*0.955,
+               y       =  usr[4]*0.975,
+               legend  =  c(expression(paste(bar(italic(x))==1)),
+                            expression(paste(bar(italic(x))==5))),
+               lty     =  c(2,2),
+               seg.len =  2,
+               lwd     =  2,
+               col     =  c(transparentColor(COL8[1], opacity=0.6),
+                            transparentColor(COL8[1], opacity=0.3)),
+               cex     =  1,
+               xjust   =  1,
+               yjust   =  1,
+               bty     =  'n',
+               border  =  NA
+               )
+        legend(
+               x       =  usr[2]*0.8,
+               y       =  usr[4]*0.975,
+               legend  =  c(" ",
+                            " "),
+               pch     =  21,
+               col     =  c(transparentColor(COL8[1], opacity=0.6),
+                            transparentColor(COL8[1], opacity=0.3)),
+               pt.bg     =  c(transparentColor(COL8[1], opacity=0.6),
+                            transparentColor(COL8[1], opacity=0.3)),
+               cex     =  1,
+               xjust   =  1,
+               yjust   =  1,
+               bty     =  'n',
+               border  =  NA
+               )
+
+}
+
+
+
+
+
+
+
+############################################
+# Supplementary Figures
+############################################
 KO_InvCond_F_up  <-  function(s1, F) {
   S  <-  (2*F)/(F + 1)
   (s1*(2 - S - 2*s1))/(S*(1 - 2*s1))
@@ -332,258 +982,56 @@ classicParamSpaceFig  <-  function() {
 
 }
 
+classicWkSelFig  <-  function() {
 
-######################################
-# Figure 2.
-# Balancing Selection among new mutations
-PrBalPredNewMut = function(x, a, b){
-  0.5*(erf(a*x/sqrt(2)) - erf(b*x/sqrt(2)))
-}
-
-R.new.smallMut = function(F, h){
-  (1 - F^2)*h*(1 - h)/((F + (1 - F)*h)*(1 - (1 - F)*h))
-}
-R.new.largeMut = function(F, h){
-  (1 - F^2)*h^2*(1 - h^2)/((F + (1 - F)*h^2)*(1 - (1 - F)*h^2))
-}
-
-BalSelNewMutationsFig  <-  function(n = 50, z = 1, F = 1/2, h = 1/2, reps=10^5) {
+    # Set inbreeding values
+    F.I = c(0.1, 0.3, 0.5, 0.7, 0.98)
 
     # Colors
-    COL8  <- c("#000000", "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7")
+    COL8  <- c("#000000", "#E69F00", "#56B4E9", "#009E73", "#0072B2", "#D55E00", "#CC79A7")
 
     # set plot layout
-    layout.mat  <-  matrix(c(1,2), nrow=1, ncol=2, byrow=TRUE)
+    layout.mat  <-  matrix(c(1), nrow=1, ncol=1, byrow=TRUE)
     layout      <-  layout(layout.mat,respect=TRUE)
 
-    # Generate data to plot
-    x.series    <- c(0.05, seq(0.25,5,0.25))
-    Pr.bal.sim  <-  vector()
-    Fvals       <-  c(0, 0.25, 0.5)
-    O = rep(0, n) #optimal phenotype
-    A = c(-z, rep(0, n - 1)) #wild-type phenotype
-    for(f in 1:length(Fvals)) {
-        s.het = vector()
-        s.hom = vector()
-        for(j in 1:length(x.series)){
-        r = x.series[j]*(2*z)/sqrt(n)
-            for(i in 1:reps){
-                mut = rnorm(n)
-                A.het = A + r*h*mut/sqrt(sum(mut^2))
-                z.het = sqrt(sum((A.het - O)^2))
-                A.hom = A + r*mut/sqrt(sum(mut^2))
-                z.hom = sqrt(sum((A.hom - O)^2))
-                s.het[i] = exp(-z.het^2/2)/exp(-z^2/2) - 1
-                s.hom[i] = exp(-z.hom^2/2)/exp(-z^2/2) - 1
-                }
-            Pr.bal.sim  <-  c(Pr.bal.sim, sum(s.het*(1 - Fvals[f]) > s.hom & s.het*(1 - Fvals[f]) > -Fvals[f]*s.hom)/reps)
-            }
-        }
-        plotDat  <-  as.data.frame(cbind(Pr.bal.sim, rep(x.series, times=3), rep(Fvals, each=length(x.series))))
-        names(plotDat)  <-  c("Pr.bal.sim", "xSeries", "F")
-    # Generate predicted lines
-    pred.x  <-  c(0:100)/20
-    Pred1  <-  PrBalPredNewMut(x=pred.x, a=funa(F=Fvals[1], h=1/2), b=funb(F=Fvals[1], h=1/2))
-    Pred2  <-  PrBalPredNewMut(x=pred.x, a=funa(F=Fvals[2], h=1/2), b=funb(F=Fvals[2], h=1/2))
-    Pred3  <-  PrBalPredNewMut(x=pred.x, a=funa(F=Fvals[3], h=1/2), b=funb(F=Fvals[3], h=1/2))
-
-    # set plot layout
-    layout.mat  <-  matrix(c(1,2), nrow=1, ncol=2, byrow=TRUE)
-    layout      <-  layout(layout.mat,respect=TRUE)
-
-    # Create L=Plot
+    # Generate Plot
     par(omi=c(0.5, 0.5, 0.5, 0.5), mar = c(4,4,4,2), bty='o', xaxt='s', yaxt='s')
      # Panel (A) Polymorphic space
-     plot(NA, axes=FALSE, type='n', main='',xlim = c(0,5), ylim = c(0,0.25), ylab='', xlab='', cex.lab=1.2)
-        usr  <-  par('usr')
-        rect(usr[1], usr[3], usr[2], usr[4], col='white', border=NA)
-        plotGrid(lineCol='grey80')
-        box()
-        # Predicted Curves
-        lines(Pred1 ~ pred.x, lwd=2, col = COL8[1])
-        lines(Pred2 ~ pred.x, lwd=2, col = COL8[2])
-        lines(Pred3 ~ pred.x, lwd=2, col = COL8[3])
-        # Simulation Points
-        points(Pr.bal.sim[F==0] ~ xSeries[F==0], pch=21, col = transparentColor(COL8[1], opacity=0.8), bg = transparentColor(COL8[1], opacity=0.5), data=plotDat)
-        points(Pr.bal.sim[F==0.25] ~ xSeries[F==0.25], pch=21, col = transparentColor(COL8[2], opacity=0.8), bg = transparentColor(COL8[2], opacity=0.5), data=plotDat)
-        points(Pr.bal.sim[F==0.5] ~ xSeries[F==0.5], pch=21, col = transparentColor(COL8[3], opacity=0.8), bg = transparentColor(COL8[3], opacity=0.5), data=plotDat)
-        # axes
-        axis(1, las=1)
-        axis(2, las=1)
-        # Plot labels etc.
-        proportionalLabel(0.05,  1.05,   expression(paste("A")), cex=1.5, adj=c(0.5, 0.5), xpd=NA)
-        proportionalLabel( -0.25,  0.5, expression(paste("Pr(bal. | ", italic(x), ")")), cex=1.3, adj=c(0.5, 0.5), xpd=NA, srt=90)
-        proportionalLabel( 0.5,  -0.25, expression(paste("Scaled mutation size (", italic(x), ")")), cex=1.3, adj=c(0.5, 0.5), xpd=NA)        
-        # Legend
-        legend(
-               x       =  usr[2]*0.78,
-               y       =  usr[4]*0.99,
-               legend  =  c(expression(paste(" ")),
-                            expression(paste(" ")),
-                            expression(paste(" "))),
-               lty     =  1,
-               lwd     =  2,
-               col     =  c(COL8[1], COL8[2], COL8[3]),
-               cex     =  1,
-               xjust   =  1,
-               yjust   =  1,
-               bty     =  'n',
-               border  =  NA
-               )
-        legend(
-               x       =  usr[2]*0.99,
-               y       =  usr[4]*0.99,
-               legend  =  c(expression(italic(F)==0.0),
-                            expression(italic(F)==0.25),
-                            expression(italic(F)==0.5)),
-               pch     =  21,
-               col     =  c(transparentColor(COL8[1], opacity=0.8),
-                            transparentColor(COL8[2], opacity=0.8),
-                            transparentColor(COL8[3], opacity=0.8)),
-               pt.bg   =  c(transparentColor(COL8[1], opacity=0.5),
-                            transparentColor(COL8[2], opacity=0.5),
-                            transparentColor(COL8[3], opacity=0.5)),
-               pt.cex  =  1,
-               cex     =  1,
-               xjust   =  1,
-               yjust   =  1,
-               bty     =  'n',
-               border  =  NA
-               )
-
-    # Generate data to plot
-    F.series    <- c(0:100)/100
-    R.new.smallMut.Sims.h0.5  <-  relBalancing_F_Sims(h = 1/2)
-    R.new.largeMut.Sims.h0.5  <-  relBalancing_F_Sims(h = 1/2, largeMut=TRUE)
-    R.new.smallMut.Sims.h0.1  <-  relBalancing_F_Sims(h = 1/10)
-    R.new.largeMut.Sims.h0.1  <-  relBalancing_F_Sims(h = 1/10, largeMut=TRUE)
-
-     # Panel (B) Rbal for new mutations
      plot(NA, axes=FALSE, type='n', main='',xlim = c(0,1), ylim = c(0,1), ylab='', xlab='', cex.lab=1.2)
         usr  <-  par('usr')
         rect(usr[1], usr[3], usr[2], usr[4], col='white', border=NA)
         plotGrid(lineCol='grey80')
         box()
-        # Predicted Curves
-        lines(R.new.smallMut(F=F.series, h=0.5) ~ F.series, lty=1, lwd=2, col = COL8[2])
-        lines(R.new.largeMut(F=F.series, h=0.5) ~ F.series, lty=2, lwd=2, col = COL8[2])
-        lines(R.new.smallMut(F=F.series, h=0.1) ~ F.series, lty=1, lwd=2, col = COL8[3])
-        lines(R.new.largeMut(F=F.series, h=0.1) ~ F.series, lty=2, lwd=2, col = COL8[3])
-        lines((1 - F.series) ~ F.series, lwd=2, col = COL8[1])
-        # Simulation Points
-        points(rBal ~ F, pch=21, col = transparentColor(COL8[2], opacity=0.8), bg = transparentColor(COL8[2], opacity=0.5), data=R.new.smallMut.Sims.h0.5)
-        points(rBal ~ F, pch=21, col = transparentColor(COL8[2], opacity=0.8), bg = transparentColor(COL8[2], opacity=0.5), data=R.new.largeMut.Sims.h0.5)
-        points(rBal ~ F, pch=21, col = transparentColor(COL8[3], opacity=0.8), bg = transparentColor(COL8[3], opacity=0.5), data=R.new.smallMut.Sims.h0.1)
-        points(rBal ~ F, pch=21, col = transparentColor(COL8[3], opacity=0.8), bg = transparentColor(COL8[3], opacity=0.5), data=R.new.largeMut.Sims.h0.1)
+        # Generate Curves
+        s2  <-  0:1000/1000
+        for(i in 1:length(F.I)) {
+            upper  <-  upper.classic(F=F.I[i], s.2 = s2)
+            lower  <-  lower.classic(F=F.I[i], s.2 = s2)
+            lines(upper[upper < 1 ] ~ s2[upper < 1 ], lwd=2, col=COL8[i])
+            lines(lower ~ s2, lwd=2, col=COL8[i])
+        }
         # axes
         axis(1, las=1)
         axis(2, las=1)
         # Plot labels etc.
-        proportionalLabel(0.05,  1.05,   expression(paste("B")), cex=1.5, adj=c(0.5, 0.5), xpd=NA)
-        proportionalLabel(-0.25,  0.5,  expression(paste("Relative fraction (", italic(R[new]), ")")), cex=1.3, adj=c(0.5, 0.5), xpd=NA, srt=90)        
-        proportionalLabel( 0.5,  -0.25,  expression(paste("Inbreeding coefficient (", italic(F), ")")), cex=1.3, adj=c(0.5, 0.5), xpd=NA)
-        # Legend
-        legend(
-               x       =  usr[2]*0.6,
-               y       =  usr[4]*0.99,
-               legend  =  c(" ",
-                            " ",
-                            " ",
-                            " ",
-                            " "),
-               lty     =  c(1, 1, 2, 1, 2),
-               lwd     =  2,
-               col     =  c(COL8[1],
-                            COL8[2],
-                            COL8[2],
-                            COL8[3],
-                            COL8[3]),
-               cex     =  1,
-               xjust   =  1,
-               yjust   =  1,
-               bty     =  'n',
-               border  =  NA
-               )
-        # Legend
-        legend(
-               x       =  usr[2]*0.99,
-               y       =  usr[4]*0.99,
-               legend  =  c(expression(paste(1-italic(F))),
-                            expression(paste("small-", italic(x), " (", italic(h)==0.5,")")),
-                            expression(paste("large-", italic(x), " (", italic(h)==0.5,")")),
-                            expression(paste("small-", italic(x), " (", italic(h)==0.1,")")),
-                            expression(paste("large-", italic(x), " (", italic(h)==0.1,")"))),
-               pch     =  21,
-               pt.bg   =  c(NA,
-                            transparentColor(COL8[2], opacity=0.5),
-                            transparentColor(COL8[2], opacity=0.5),
-                            transparentColor(COL8[3], opacity=0.5),
-                            transparentColor(COL8[3], opacity=0.5)),
-               col     =  c(NA,
-                            COL8[2],
-                            COL8[2],
-                            COL8[3],
-                            COL8[3]),
-               cex     =  1,
-               xjust   =  1,
-               yjust   =  1,
-               bty     =  'n',
-               border  =  NA
-               )
-
+#        proportionalLabel(0.05,  1.075,   expression(paste("A")), cex=1.5, adj=c(0.5, 0.5), xpd=NA)
+#        proportionalLabel(0.5,  1.075,   expression(paste("Weak-selection approx.")), cex=1.5, adj=c(0.5, 0.5), xpd=NA)
+        proportionalLabel( -0.25,  0.5, expression(paste("Selection against ", italic(aa), " ",(italic(s[2])))), cex=1.3, adj=c(0.5, 0.5), xpd=NA, srt=90)
+        proportionalLabel( 0.5,  -0.25, expression(paste("Selection against ", italic(AA), " ",(italic(s[1])))), cex=1.3, adj=c(0.5, 0.5), xpd=NA)        
+        proportionalLabel( 0.875,  0.17, expression(paste(italic(F), " = ", 0.1)), cex=1.2, adj=c(0.5, 0.5), xpd=NA, srt=8, col=COL8[1])
+        proportionalLabel( 0.875,  0.33,  expression(paste(italic(F), " = ", 0.3)), cex=1.2, adj=c(0.5, 0.5), xpd=NA, srt=13, col=COL8[2])
+        proportionalLabel( 0.875,  0.5,  expression(paste(italic(F), " = ", 0.5)), cex=1.2, adj=c(0.5, 0.5), xpd=NA, srt=25, col=COL8[3])
+        proportionalLabel( 0.875,  0.67,  expression(paste(italic(F), " = ", 0.7)), cex=1.2, adj=c(0.5, 0.5), xpd=NA, srt=30, col=COL8[4])
+        proportionalLabel( 0.875,  0.81,  expression(paste(italic(F), " = ", 0.98)), cex=1.2, adj=c(0.5, 0.5), xpd=NA, srt=40, col=COL8[5])
 }
 
 
-######################################
-# Figure 3. (Tentative)
-# Ratio of balancing selection among 
-# Favoured Mutations
 
-# Ancillary functions for this figure
-Pr.inv.F  <-  function(x, F.I, h){
-  b  <-  (F.I + (1 - F.I)*h^2)/(F.I + (1 - F.I)*h)
-  1 - pnorm(x*b)
-}
-Pr.bal.F = function(x, F.I, h){
-  a  <-  (1 - (1 - F.I)*h^2)/(1 - (1 - F.I)*h)
-  b  <-  (F.I + (1 - F.I)*h^2)/(F.I + (1 - F.I)*h)
-  pnorm(x*a) - pnorm(x*b)
-}
-Pr.pos.F = function(x, F.I, h){
-  a  <-  (1 - (1 - F.I)*h^2)/(1 - (1 - F.I)*h)
-  1 - pnorm(x*a)
-}
-Pr.inv = function(x, h){
-  b  <-  h
-  1 - pnorm(x*b)
-}
-Pr.bal = function(x, h){
-  a  <-  (1 + h)
-  b  <-  h
-  pnorm(x*a) - pnorm(x*b)
-}
-Pr.pos = function(x, h){
-  a  <-  (1 + h)
-  b  <-  h
-  1 - pnorm(x*a)
-}
-#Rbal_smallMutLimit  <-  function(F.I, h){
-#    (1 - F.I)*h*(1 - h)*(1/(1 - (1 - F.I)*h) + 1/(F.I + (1 - F.I)*h))
-#}
-Rbal_smallMutLimit  <-  function(F, h){
-    ((1 - F^2)*h*(1 - h)) / ((F + (1 - F)*h) * (1 - (1 - F)*h))
-}
-
-Rbal_largex_fav  <-  function(F, h) {
-    ((1 - F^2)*h*(1 - h^2)) / ((F + (1 - F)*h) * (1 - (1 - F)*h^2))
-
-}
-
-# Ratio of inbred/outcross balancing selection
-RelBalancingFavored_Fig  <-  function(favouredMuts = TRUE) {
+# Rbal for adaptive mutations
+RelBalancingFavored_wSmall_Fig  <-  function(xAvg=2, favouredMuts = TRUE) {
     
     # Colors
-    colorBlindBlack8  <- c("#000000", "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7")
+    COL8  <- c("#000000", "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7")
 
     # set plot layout
     layout.mat  <-  matrix(c(1,2), nrow=1, ncol=2, byrow=TRUE)
@@ -601,22 +1049,22 @@ RelBalancingFavored_Fig  <-  function(favouredMuts = TRUE) {
         plotGrid(lineCol='grey80')
         box()
         # Generate Lines + points
-        lines(Rbal_smallMutLimit(F = F.values, h = h.i[1]) ~ F.values, type = "l", xlab = "inbreeding coefficient (F)", ylab = "reduction in Pr(bal.)", col = colorBlindBlack8[2], lwd = 3)
-        lines(Rbal_smallMutLimit(F = F.values, h = h.i[2]) ~ F.values, type = "l", xlab = "inbreeding coefficient (F)", ylab = "reduction in Pr(bal.)", col = colorBlindBlack8[3], lwd = 3)
-        lines(Rbal_smallMutLimit(F = F.values, h = h.i[3]) ~ F.values, type = "l", xlab = "inbreeding coefficient (F)", ylab = "reduction in Pr(bal.)", col = colorBlindBlack8[4], lwd = 3)
-        lines((1 - F.values) ~ F.values, col = colorBlindBlack8[1], lwd = 3)
+        lines(Rbal_smallMutLimit(F = F.values, h = h.i[1]) ~ F.values, type = "l", xlab = "inbreeding coefficient (F)", ylab = "reduction in Pr(bal.)", col = COL8[2], lwd = 3)
+        lines(Rbal_smallMutLimit(F = F.values, h = h.i[2]) ~ F.values, type = "l", xlab = "inbreeding coefficient (F)", ylab = "reduction in Pr(bal.)", col = COL8[3], lwd = 3)
+        lines(Rbal_smallMutLimit(F = F.values, h = h.i[3]) ~ F.values, type = "l", xlab = "inbreeding coefficient (F)", ylab = "reduction in Pr(bal.)", col = COL8[4], lwd = 3)
+        lines((1 - F.values) ~ F.values, col = COL8[1], lwd = 3)
         # Simulations
-        RbalSim_h1  <-  relBalancing_F_Sims(h=1/2, largeMut = FALSE)
-        RbalSim_h2  <-  relBalancing_F_Sims(h=1/4, largeMut = FALSE)
-        RbalSim_h3  <-  relBalancing_F_Sims(h=1/10, largeMut = FALSE)
+        RbalSim_h1  <-  relBalancing_F_Sims(xAvg=0.05, h=1/2, largeMut = FALSE)
+        RbalSim_h2  <-  relBalancing_F_Sims(xAvg=0.05, h=1/4, largeMut = FALSE)
+        RbalSim_h3  <-  relBalancing_F_Sims(xAvg=0.05, h=1/10, largeMut = FALSE)
         if(favouredMuts) {
-            points(rBal.fav ~ F, pch=21, col=transparentColor(colorBlindBlack8[2], opacity=0.6), bg=transparentColor(colorBlindBlack8[2], opacity=0.4), data=RbalSim_h1)
-            points(rBal.fav ~ F, pch=21, col=transparentColor(colorBlindBlack8[3], opacity=0.6), bg=transparentColor(colorBlindBlack8[3], opacity=0.4), data=RbalSim_h2)
-            points(rBal.fav ~ F, pch=21, col=transparentColor(colorBlindBlack8[4], opacity=0.6), bg=transparentColor(colorBlindBlack8[4], opacity=0.4), data=RbalSim_h3)
+            points(rBal.fav ~ F, pch=21, col=transparentColor(COL8[2], opacity=0.6), bg=transparentColor(COL8[2], opacity=0.4), data=RbalSim_h1)
+            points(rBal.fav ~ F, pch=21, col=transparentColor(COL8[3], opacity=0.6), bg=transparentColor(COL8[3], opacity=0.4), data=RbalSim_h2)
+            points(rBal.fav ~ F, pch=21, col=transparentColor(COL8[4], opacity=0.6), bg=transparentColor(COL8[4], opacity=0.4), data=RbalSim_h3)
             } else {
-            points(rBal ~ F, pch=21, col=transparentColor(colorBlindBlack8[2], opacity=0.6), bg=transparentColor(colorBlindBlack8[2], opacity=0.4), data=RbalSim_h1)
-            points(rBal ~ F, pch=21, col=transparentColor(colorBlindBlack8[3], opacity=0.6), bg=transparentColor(colorBlindBlack8[3], opacity=0.4), data=RbalSim_h2)
-            points(rBal ~ F, pch=21, col=transparentColor(colorBlindBlack8[4], opacity=0.6), bg=transparentColor(colorBlindBlack8[4], opacity=0.4), data=RbalSim_h3)
+            points(rBal ~ F, pch=21, col=transparentColor(COL8[2], opacity=0.6), bg=transparentColor(COL8[2], opacity=0.4), data=RbalSim_h1)
+            points(rBal ~ F, pch=21, col=transparentColor(COL8[3], opacity=0.6), bg=transparentColor(COL8[3], opacity=0.4), data=RbalSim_h2)
+            points(rBal ~ F, pch=21, col=transparentColor(COL8[4], opacity=0.6), bg=transparentColor(COL8[4], opacity=0.4), data=RbalSim_h3)
         }
         # axes
         axis(1, las=1)
@@ -628,22 +1076,44 @@ RelBalancingFavored_Fig  <-  function(favouredMuts = TRUE) {
         proportionalLabel( 0.5,  -0.25,  expression(paste("Inbreeding coefficient (", italic(F), ")")), cex=1.3, adj=c(0.5, 0.5), xpd=NA)
         # Legend
         legend(
-               x       =  usr[2]*0.99,
+               x       =  usr[2]*0.61,
                y       =  usr[4]*0.99,
-               legend  =  c(expression(paste(1-italic(F))),
-                            expression(paste(italic(h)==1/2, " (Eq.10)")),
-                            expression(paste(italic(h)==1/4, " (Eq.10)")),
-                            expression(paste(italic(h)==1/10, " (Eq.10)"))),
+               legend  =  c(" ",
+                            " ",
+                            " ",
+                            " "),
                lty     =  1,
                lwd     =  3,
-               col     =  c(colorBlindBlack8[1], colorBlindBlack8[2], colorBlindBlack8[3], colorBlindBlack8[4]),
+               col     =  c(COL8[1], COL8[2], COL8[3], COL8[4]),
                cex     =  1,
                xjust   =  1,
                yjust   =  1,
                bty     =  'n',
                border  =  NA
                )
-
+        # Legend
+        legend(
+               x       =  usr[2]*0.99,
+               y       =  usr[4]*0.99,
+               legend  =  c(expression(paste(1-italic(F))),
+                            expression(paste(italic(nu)==1/2, " (Eq.B15)")),
+                            expression(paste(italic(nu)==1/4, " (Eq.B15)")),
+                            expression(paste(italic(nu)==1/10, " (Eq.B15)"))),
+               pch     =  21,
+               pt.bg   =  c(NA,
+                            transparentColor(COL8[2], opacity=0.5),
+                            transparentColor(COL8[3], opacity=0.5),
+                            transparentColor(COL8[4], opacity=0.5)),
+               col     =  c(NA,
+                            COL8[2],
+                            COL8[3],
+                            COL8[4]),
+               cex     =  1,
+               xjust   =  1,
+               yjust   =  1,
+               bty     =  'n',
+               border  =  NA
+               )
      # Panel (B) -- Large Mutation Limit 
      # Proportion of parameter space where balancing selection occurs
     plot(NA, axes=FALSE, type='n', main='',xlim = c(0,1), ylim = c(0,1), ylab='', xlab='', cex.lab=1.2)
@@ -652,60 +1122,72 @@ RelBalancingFavored_Fig  <-  function(favouredMuts = TRUE) {
         plotGrid(lineCol='grey80')
         box()
         # Generate Lines + points
-        lines(Rbal_largex_fav(F = F.values, h = h.i[1]) ~ F.values, type = "l", xlab = "inbreeding coefficient (F)", ylab = "reduction in Pr(bal.)", col = colorBlindBlack8[2], lwd = 3)
-        lines(Rbal_largex_fav(F = F.values, h = h.i[2]) ~ F.values, type = "l", xlab = "inbreeding coefficient (F)", ylab = "reduction in Pr(bal.)", col = colorBlindBlack8[3], lwd = 3)
-        lines(Rbal_largex_fav(F = F.values, h = h.i[3]) ~ F.values, type = "l", xlab = "inbreeding coefficient (F)", ylab = "reduction in Pr(bal.)", col = colorBlindBlack8[4], lwd = 3)
-        lines((1 - F.values) ~ F.values, col = colorBlindBlack8[1], lwd = 3)
+        lines(Rbal_largex_fav(F = F.values, h = h.i[1]) ~ F.values, type = "l", xlab = "inbreeding coefficient (F)", ylab = "reduction in Pr(bal.)", col = COL8[2], lwd = 3)
+        lines(Rbal_largex_fav(F = F.values, h = h.i[2]) ~ F.values, type = "l", xlab = "inbreeding coefficient (F)", ylab = "reduction in Pr(bal.)", col = COL8[3], lwd = 3)
+        lines(Rbal_largex_fav(F = F.values, h = h.i[3]) ~ F.values, type = "l", xlab = "inbreeding coefficient (F)", ylab = "reduction in Pr(bal.)", col = COL8[4], lwd = 3)
+        lines((1 - F.values) ~ F.values, col = COL8[1], lwd = 3)
         # Simulations
-        RbalSim_h1  <-  relBalancing_F_Sims(h=1/2, largeMut = TRUE)
-        RbalSim_h2  <-  relBalancing_F_Sims(h=1/4, largeMut = TRUE)
-        RbalSim_h3  <-  relBalancing_F_Sims(h=1/10, largeMut = TRUE)
+        RbalSim_h1  <-  relBalancing_F_Sims(xAvg=xAvg, h=1/2, largeMut = TRUE)
+        RbalSim_h2  <-  relBalancing_F_Sims(xAvg=xAvg, h=1/4, largeMut = TRUE)
+        RbalSim_h3  <-  relBalancing_F_Sims(xAvg=xAvg, h=1/10, largeMut = TRUE)
         if(favouredMuts) {
-            points(rBal.fav ~ F, pch=21, col=transparentColor(colorBlindBlack8[2], opacity=0.6), bg=transparentColor(colorBlindBlack8[2], opacity=0.4), data=RbalSim_h1)
-            points(rBal.fav ~ F, pch=21, col=transparentColor(colorBlindBlack8[3], opacity=0.6), bg=transparentColor(colorBlindBlack8[3], opacity=0.4), data=RbalSim_h2)
-            points(rBal.fav ~ F, pch=21, col=transparentColor(colorBlindBlack8[4], opacity=0.6), bg=transparentColor(colorBlindBlack8[4], opacity=0.4), data=RbalSim_h3)
+            points(rBal.fav ~ F, pch=21, col=transparentColor(COL8[2], opacity=0.6), bg=transparentColor(COL8[2], opacity=0.4), data=RbalSim_h1)
+            points(rBal.fav ~ F, pch=21, col=transparentColor(COL8[3], opacity=0.6), bg=transparentColor(COL8[3], opacity=0.4), data=RbalSim_h2)
+            points(rBal.fav ~ F, pch=21, col=transparentColor(COL8[4], opacity=0.6), bg=transparentColor(COL8[4], opacity=0.4), data=RbalSim_h3)
             } else {
-            points(rBal ~ F, pch=21, col=transparentColor(colorBlindBlack8[2], opacity=0.6), bg=transparentColor(colorBlindBlack8[2], opacity=0.4), data=RbalSim_h1)
-            points(rBal ~ F, pch=21, col=transparentColor(colorBlindBlack8[3], opacity=0.6), bg=transparentColor(colorBlindBlack8[3], opacity=0.4), data=RbalSim_h2)
-            points(rBal ~ F, pch=21, col=transparentColor(colorBlindBlack8[4], opacity=0.6), bg=transparentColor(colorBlindBlack8[4], opacity=0.4), data=RbalSim_h3)
+            points(rBal ~ F, pch=21, col=transparentColor(COL8[2], opacity=0.6), bg=transparentColor(COL8[2], opacity=0.4), data=RbalSim_h1)
+            points(rBal ~ F, pch=21, col=transparentColor(COL8[3], opacity=0.6), bg=transparentColor(COL8[3], opacity=0.4), data=RbalSim_h2)
+            points(rBal ~ F, pch=21, col=transparentColor(COL8[4], opacity=0.6), bg=transparentColor(COL8[4], opacity=0.4), data=RbalSim_h3)
         }
         # axes
         axis(1, las=1)
         axis(2, las=1, labels=NA)
         # Plot labels etc.
         proportionalLabel(0.05,  1.075,   expression(paste("B")), cex=1.5, adj=c(0.5, 0.5), xpd=NA)
-        proportionalLabel(0.5,  1.075,   expression(paste("Large-mutation limit")), cex=1.5, adj=c(0.5, 0.5), xpd=NA)        
+        proportionalLabel(0.5,  1.075,   expression(paste("Variable mutation size", sep="")), cex=1.5, adj=c(0.5, 0.5), xpd=NA)        
         proportionalLabel( 0.5,  -0.25,  expression(paste("Inbreeding coefficient (", italic(F), ")")), cex=1.3, adj=c(0.5, 0.5), xpd=NA)
         # Legend
         legend(
-               x       =  usr[2]*0.99,
+               x       =  usr[2]*0.61,
                y       =  usr[4]*0.99,
-               legend  =  c(expression(paste(1-italic(F))),
-                            expression(paste(italic(h)==1/2, " (Eq.11)")),
-                            expression(paste(italic(h)==1/4, " (Eq.11)")),
-                            expression(paste(italic(h)==1/10, " (Eq.11)"))),
+               legend  =  c(" ",
+                            " ",
+                            " ",
+                            " "),
                lty     =  1,
                lwd     =  3,
-               col     =  c(colorBlindBlack8[1], colorBlindBlack8[2], colorBlindBlack8[3], colorBlindBlack8[4]),
+               col     =  c(COL8[1], COL8[2], COL8[3], COL8[4]),
                cex     =  1,
                xjust   =  1,
                yjust   =  1,
                bty     =  'n',
                border  =  NA
                )
-
+        # Legend
+        legend(
+               x       =  usr[2]*0.99,
+               y       =  usr[4]*0.99,
+               legend  =  c(expression(paste(1-italic(F))),
+                            expression(paste(italic(nu)==1/2, " (Eq.B17)")),
+                            expression(paste(italic(nu)==1/4, " (Eq.B17)")),
+                            expression(paste(italic(nu)==1/10, " (Eq.B17)"))),
+               pch     =  21,
+               pt.bg   =  c(NA,
+                            transparentColor(COL8[2], opacity=0.5),
+                            transparentColor(COL8[3], opacity=0.5),
+                            transparentColor(COL8[4], opacity=0.5)),
+               col     =  c(NA,
+                            COL8[2],
+                            COL8[3],
+                            COL8[4]),
+               cex     =  1,
+               xjust   =  1,
+               yjust   =  1,
+               bty     =  'n',
+               border  =  NA
+               )
 }
 
-
-
-# Summary Figure showing small & large mutation size results
-# for the relative fraction of favored and established mutations
-# under balancing selection
-
-# Ancillary functions for this figure
-Rbal_largeMut_est  <-  function(F) {
-    (27* (1 - F)^2 * (7*F + 5)) / (5*(3 + F)^3 )
-}
 
 
 # Summary Figure for ratio of inbred/outcross balancing selection
@@ -715,7 +1197,7 @@ RelBalancing_SummaryFig  <-  function(h=1/2, Ne = 10^4, sim.reps=10^3) {
     F.values = 0:100/100
 
     # Colors
-    colorBlindBlack8  <- c("#000000", "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7")
+    COL8  <- c("#000000", "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7")
 
     # set plot layout
     layout.mat  <-  matrix(1, nrow=1, ncol=1, byrow=TRUE)
@@ -731,24 +1213,24 @@ RelBalancing_SummaryFig  <-  function(h=1/2, Ne = 10^4, sim.reps=10^3) {
         box()
         # Generate Curves
             # Favoured mutations
-            lines(Rbal_smallMutLimit(F=F.values, h=1/2) ~ F.values, lty = 1, lwd = 3, col = colorBlindBlack8[2])
-            lines(Rbal_largex_fav(F=F.values, h=1/2) ~ F.values, lty = 2, lwd = 3, col = colorBlindBlack8[2])
+            lines(Rbal_smallMutLimit(F=F.values, h=1/2) ~ F.values, lty = 1, lwd = 3, col = COL8[2])
+            lines(Rbal_largex_fav(F=F.values, h=1/2) ~ F.values, lty = 2, lwd = 3, col = COL8[2])
             # Established mutations
-            lines(((1 - F.values)^2/(1 + F.values)^2) ~ F.values, lty = 1, lwd = 3, col = colorBlindBlack8[3])
-            lines(Rbal_largeMut_est(F=F.values) ~ F.values, lty = 2, lwd = 3, col = colorBlindBlack8[3])
+            lines(((1 - F.values)^2/(1 + F.values)^2) ~ F.values, lty = 1, lwd = 3, col = COL8[3])
+            lines(Rbal_largeMut_est(F=F.values) ~ F.values, lty = 2, lwd = 3, col = COL8[3])
         # Simulations
-            RbalSim.F.small  <-  read.csv("./out/relBal_smallMut_F_EstabMuts_Ne1e+06_n50_z1_h0.5_reps1e+05.csv", header=TRUE)
-            RbalSim.F  <-  read.csv("./out/relBal_variable_x_EstabMuts_Ne1e+06_n50_z1_h0.5_reps10000.csv", header=TRUE)
-            RbalSim.small  <-  relBalancing_F_Sims(h=1/2, largeMut = FALSE)
-            RbalSim.large  <-  relBalancing_F_Sims(h=1/2, largeMut = TRUE)
-            points(rBal.fav ~ F, pch=21, col=transparentColor(colorBlindBlack8[2], opacity=0.9), bg=transparentColor(colorBlindBlack8[2], opacity=0.4), data=RbalSim.small)
-            points(rBal.fav ~ F, pch=21, col=transparentColor(colorBlindBlack8[2], opacity=0.6), bg=transparentColor(colorBlindBlack8[2], opacity=0.4), data=RbalSim.large)
+            RbalSim.F.small  <-  read.csv("./out/relBal_variable_x_EstabMuts_xAvg0.05_Ne1e+05_n50_z1_h0.5_reps1e+05.csv", header=TRUE)
+            RbalSim.F        <-  read.csv("./out/relBal_variable_x_EstabMuts_xAvg5_Ne1e+05_n50_z1_h0.5_reps1e+05.csv", header=TRUE)
+            RbalSim.small    <-  relBalancing_F_Sims(h=1/2, largeMut = FALSE)
+            RbalSim.large    <-  relBalancing_F_Sims(xAvg=2, h=1/2, largeMut = TRUE)
+            points(rBal.fav ~ F, pch=21, col=transparentColor(COL8[2], opacity=0.9), bg=transparentColor(COL8[2], opacity=0.4), data=RbalSim.small)
+            points(rBal.fav ~ F, pch=21, col=transparentColor(COL8[2], opacity=0.6), bg=transparentColor(COL8[2], opacity=0.4), data=RbalSim.large)
 #            RbalSim.F  <-  relBalancingMutSize_variable_x_EstabMuts_Sims(h=1/2, sim.reps=sim.reps)
-#            points(rBal.new ~ F, pch=21, col=transparentColor(colorBlindBlack8[2], opacity=0.9), bg=transparentColor(colorBlindBlack8[2], opacity=0.4), data=RbalSim.F)
-            points(rBal.est ~ F, pch=21, col=transparentColor(colorBlindBlack8[3], opacity=0.9), bg=transparentColor(colorBlindBlack8[3], opacity=0.4), data=RbalSim.F.small)
-            points(rBal.est ~ F, pch=21, col=transparentColor(colorBlindBlack8[3], opacity=0.9), bg=transparentColor(colorBlindBlack8[3], opacity=0.4), data=RbalSim.F)
+#            points(rBal.new ~ F, pch=21, col=transparentColor(COL8[2], opacity=0.9), bg=transparentColor(COL8[2], opacity=0.4), data=RbalSim.F)
+            points(rBal.est ~ F, pch=21, col=transparentColor(COL8[3], opacity=0.9), bg=transparentColor(COL8[3], opacity=0.4), data=RbalSim.F.small)
+            points(rBal.est ~ F, pch=21, col=transparentColor(COL8[3], opacity=0.9), bg=transparentColor(COL8[3], opacity=0.4), data=RbalSim.F)
             # Naive expectation
-            lines((1 - F.values) ~ F.values, col = colorBlindBlack8[1], lwd = 3)
+            lines((1 - F.values) ~ F.values, col = COL8[1], lwd = 3)
         # axes
         axis(1, las=1)
         axis(2, las=1)
@@ -759,12 +1241,12 @@ RelBalancing_SummaryFig  <-  function(h=1/2, Ne = 10^4, sim.reps=10^3) {
         # Naive predictions
         proportionalLabel( 0.73,  0.95,  expression(paste("Na\u{00EF}ve prediction")), cex=1.3, adj=c(0.5, 0.5), xpd=NA)
         legend(
-               x       =  usr[2]*0.78,
+               x       =  usr[2]*0.75,
                y       =  usr[4]*0.925,
                legend  =  c(expression(paste(1-italic(F)))),
                lty     =  1,
                lwd     =  3,
-               col     =  colorBlindBlack8[1],
+               col     =  COL8[1],
                cex     =  1,
                xjust   =  1,
                yjust   =  1,
@@ -774,13 +1256,29 @@ RelBalancing_SummaryFig  <-  function(h=1/2, Ne = 10^4, sim.reps=10^3) {
         # Favored mutations
         proportionalLabel( 0.75,  0.82,  expression(paste("Adaptive mutations")), cex=1.3, adj=c(0.5, 0.5), xpd=NA)
         legend(
-               x       =  usr[2]*0.93,
+               x       =  usr[2]*0.67,
                y       =  usr[4]*0.79,
-               legend  =  c(expression(paste("Large-", italic(x), " (Eq.11)")),
-                            expression(paste("Small-", italic(x), " (Eq.10)"))),
+               legend  =  c(" ",
+                            " "),
                lty     =  c(2,1),
                lwd     =  3,
-               col     =  colorBlindBlack8[2],
+               col     =  COL8[2],
+               cex     =  1,
+               xjust   =  1,
+               yjust   =  1,
+               bty     =  'n',
+               border  =  NA
+               )
+        legend(
+               x       =  usr[2]*0.98,
+               y       =  usr[4]*0.79,
+               legend  =  c(expression(paste("Variable-", italic(x), " (Eq.B17)")),
+                            expression(paste("Small-", italic(x), " (Eq.B15)"))),
+               pch     =  21,
+               pt.bg   =  c(transparentColor(COL8[2], opacity=0.5),
+                            transparentColor(COL8[2], opacity=0.5)),
+               col     =  c(COL8[2],
+                            COL8[2]),
                cex     =  1,
                xjust   =  1,
                yjust   =  1,
@@ -790,45 +1288,36 @@ RelBalancing_SummaryFig  <-  function(h=1/2, Ne = 10^4, sim.reps=10^3) {
         # Established mutations
         proportionalLabel( 0.78,  0.64,  expression(paste("Established mutations")), cex=1.3, adj=c(0.5, 0.5), xpd=NA)
         legend(
-               x       =  usr[2]*0.93,
+               x       =  usr[2]*0.67,
                y       =  usr[4]*0.6,
-               legend  =  c(expression(paste("Large-", italic(x), " (Eq.13)")),
-                            expression(paste("Small-", italic(x), " (Eq.12)"))),
+               legend  =  c(" ",
+                            " "),
                lty     =  c(2,1),
                lwd     =  3,
-               col     =  colorBlindBlack8[3],
+               col     =  COL8[3],
                cex     =  1,
                xjust   =  1,
                yjust   =  1,
                bty     =  'n',
                border  =  NA
                )
-        # simulations
-#        legend(
-#               x       =  usr[2]*0.865,
-#               y       =  usr[4]*0.47,
-#               legend  =  c(expression(paste("Simulations"))),
-#               pch     =  21,
-#               pt.bg   =  transparentColor(colorBlindBlack8[1], opacity=0.4),
-#               col     =  transparentColor(colorBlindBlack8[1], opacity=0.6),
-#               cex     =  1,
-#               xjust   =  1,
-#               yjust   =  1,
-#               bty     =  'n',
-#               border  =  NA
-#               )
+        legend(
+               x       =  usr[2]*0.98,
+               y       =  usr[4]*0.6,
+               legend  =  c(expression(paste("Variable-", italic(x), " (Eq.B28)")),
+                            expression(paste("Small-", italic(x), " (Eq.B26)"))),
+               pch     =  21,
+               pt.bg   =  c(transparentColor(COL8[3], opacity=0.5),
+                            transparentColor(COL8[3], opacity=0.5)),
+               col     =  c(COL8[3],
+                            COL8[3]),
+               cex     =  1,
+               xjust   =  1,
+               yjust   =  1,
+               bty     =  'n',
+               border  =  NA
+               )
 }
-
-
-
-
-
-
-
-############################################
-# Preliminary Figures
-############################################
-
 
 
 ######################################
@@ -898,7 +1387,7 @@ RelBalancingFig  <-  function(F.I = 1/2, h=1/2, favouredMuts = FALSE) {
     sizes  <-  1:1000/200
 
     # Colors
-    colorBlindBlack8  <- c("#000000", "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7")
+    COL8  <- c("#000000", "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7")
 
     # set plot layout
     layout.mat  <-  matrix(c(1,2), nrow=1, ncol=2, byrow=TRUE)
@@ -926,15 +1415,15 @@ RelBalancingFig  <-  function(F.I = 1/2, h=1/2, favouredMuts = FALSE) {
         # Simulations
             RbalSim  <-  relBalancingMutSize_Sims()
         if(favouredMuts) {
-            points(rBal.fav ~ x, pch=21, col=transparentColor(colorBlindBlack8[1], opacity=0.6), bg=transparentColor(colorBlindBlack8[1], opacity=0.4), data=RbalSim)
+            points(rBal.fav ~ x, pch=21, col=transparentColor(COL8[1], opacity=0.6), bg=transparentColor(COL8[1], opacity=0.4), data=RbalSim)
             } else {
-            points(rBal ~ x, pch=21, col=transparentColor(colorBlindBlack8[1], opacity=0.6), bg=transparentColor(colorBlindBlack8[1], opacity=0.4), data=RbalSim)
+            points(rBal ~ x, pch=21, col=transparentColor(COL8[1], opacity=0.6), bg=transparentColor(COL8[1], opacity=0.4), data=RbalSim)
         }
         # axes
         axis(1, las=1)
         axis(2, las=1)
         # Plot labels etc.
-        proportionalLabel(0.5,  1.1,   expression(paste(italic(F), " = ", italic(h), " = ", 1/2)), cex=1.5, adj=c(0.5, 0.5), xpd=NA)        
+        proportionalLabel(0.5,  1.1,   expression(paste(italic(F), " = ", italic(nu), " = ", 1/2)), cex=1.5, adj=c(0.5, 0.5), xpd=NA)        
         proportionalLabel(-0.25,  0.5,  expression(paste("Relative probability (", italic(R[new]), ")")), cex=1.3, adj=c(0.5, 0.5), xpd=NA, srt=90)        
         proportionalLabel( 0.5,  -0.25, expression(paste("Mutation size (", italic(x), ")")), cex=1.3, adj=c(0.5, 0.5), xpd=NA)        
         if(!favouredMuts) {
@@ -944,10 +1433,10 @@ RelBalancingFig  <-  function(F.I = 1/2, h=1/2, favouredMuts = FALSE) {
                    y       =  usr[4]*0.99,
                    legend  =  c(expression(paste(1-italic(F))),
                                 expression(paste(Eq(7,B6))),
-                                expression(paste(Eq(8,B11)))),
+                                expression(paste(Eq(8,B10)))),
                    lty     =  c(1, 3, 1),
                    lwd     =  3,
-                   col     =  c(colorBlindBlack8[1], colorBlindBlack8[1], "grey60"),
+                   col     =  c(COL8[1], COL8[1], "grey60"),
                    cex     =  1,
                    xjust   =  1,
                    yjust   =  1,
@@ -960,8 +1449,8 @@ RelBalancingFig  <-  function(F.I = 1/2, h=1/2, favouredMuts = FALSE) {
                    y       =  usr[4]*0.99,
                    legend  =  c(expression(paste("Simulations"))),
                    pch     =  21,
-                   pt.bg   =  transparentColor(colorBlindBlack8[1], opacity=0.4),
-                   col     =  transparentColor(colorBlindBlack8[1], opacity=0.6),
+                   pt.bg   =  transparentColor(COL8[1], opacity=0.4),
+                   col     =  transparentColor(COL8[1], opacity=0.6),
                    cex     =  1,
                    xjust   =  1,
                    yjust   =  1,
@@ -979,7 +1468,7 @@ RelBalancingFig  <-  function(F.I = 1/2, h=1/2, favouredMuts = FALSE) {
                                 expression(paste(Eq(11,B17)))),
                    lty     =  c(1, 3, 1),
                    lwd     =  3,
-                   col     =  c(colorBlindBlack8[1], colorBlindBlack8[1], "grey60"),
+                   col     =  c(COL8[1], COL8[1], "grey60"),
                    cex     =  1,
                    xjust   =  1,
                    yjust   =  1,
@@ -992,8 +1481,8 @@ RelBalancingFig  <-  function(F.I = 1/2, h=1/2, favouredMuts = FALSE) {
                    y       =  usr[4]*0.99,
                    legend  =  c(expression(paste("Simulations"))),
                    pch     =  21,
-                   pt.bg   =  transparentColor(colorBlindBlack8[1], opacity=0.4),
-                   col     =  transparentColor(colorBlindBlack8[1], opacity=0.6),
+                   pt.bg   =  transparentColor(COL8[1], opacity=0.4),
+                   col     =  transparentColor(COL8[1], opacity=0.6),
                    cex     =  1,
                    xjust   =  1,
                    yjust   =  1,
@@ -1011,22 +1500,22 @@ RelBalancingFig  <-  function(F.I = 1/2, h=1/2, favouredMuts = FALSE) {
         plotGrid(lineCol='grey80')
         box()
         # Generate Lines + points
-        lines(Rbal_smallMutLimit(F = F.values, h = h.i[1]) ~ F.values, type = "l", xlab = "inbreeding coefficient (F)", ylab = "reduction in Pr(bal.)", col = colorBlindBlack8[2], lwd = 3)
-        lines(Rbal_smallMutLimit(F = F.values, h = h.i[2]) ~ F.values, type = "l", xlab = "inbreeding coefficient (F)", ylab = "reduction in Pr(bal.)", col = colorBlindBlack8[3], lwd = 3)
-        lines(Rbal_smallMutLimit(F = F.values, h = h.i[3]) ~ F.values, type = "l", xlab = "inbreeding coefficient (F)", ylab = "reduction in Pr(bal.)", col = colorBlindBlack8[4], lwd = 3)
-        lines((1 - F.values) ~ F.values, col = colorBlindBlack8[1], lwd = 3)
+        lines(Rbal_smallMutLimit(F = F.values, h = h.i[1]) ~ F.values, type = "l", xlab = "inbreeding coefficient (F)", ylab = "reduction in Pr(bal.)", col = COL8[2], lwd = 3)
+        lines(Rbal_smallMutLimit(F = F.values, h = h.i[2]) ~ F.values, type = "l", xlab = "inbreeding coefficient (F)", ylab = "reduction in Pr(bal.)", col = COL8[3], lwd = 3)
+        lines(Rbal_smallMutLimit(F = F.values, h = h.i[3]) ~ F.values, type = "l", xlab = "inbreeding coefficient (F)", ylab = "reduction in Pr(bal.)", col = COL8[4], lwd = 3)
+        lines((1 - F.values) ~ F.values, col = COL8[1], lwd = 3)
                 # Simulations
         RbalSim_h1  <-  relBalancing_F_Sims(h=1/2)
         RbalSim_h2  <-  relBalancing_F_Sims(h=1/4)
         RbalSim_h3  <-  relBalancing_F_Sims(h=1/10)
         if(favouredMuts) {
-            points(rBal.fav ~ F, pch=21, col=transparentColor(colorBlindBlack8[2], opacity=0.6), bg=transparentColor(colorBlindBlack8[2], opacity=0.4), data=RbalSim_h1)
-            points(rBal.fav ~ F, pch=21, col=transparentColor(colorBlindBlack8[3], opacity=0.6), bg=transparentColor(colorBlindBlack8[3], opacity=0.4), data=RbalSim_h2)
-            points(rBal.fav ~ F, pch=21, col=transparentColor(colorBlindBlack8[4], opacity=0.6), bg=transparentColor(colorBlindBlack8[4], opacity=0.4), data=RbalSim_h3)
+            points(rBal.fav ~ F, pch=21, col=transparentColor(COL8[2], opacity=0.6), bg=transparentColor(COL8[2], opacity=0.4), data=RbalSim_h1)
+            points(rBal.fav ~ F, pch=21, col=transparentColor(COL8[3], opacity=0.6), bg=transparentColor(COL8[3], opacity=0.4), data=RbalSim_h2)
+            points(rBal.fav ~ F, pch=21, col=transparentColor(COL8[4], opacity=0.6), bg=transparentColor(COL8[4], opacity=0.4), data=RbalSim_h3)
             } else {
-            points(rBal ~ F, pch=21, col=transparentColor(colorBlindBlack8[2], opacity=0.6), bg=transparentColor(colorBlindBlack8[2], opacity=0.4), data=RbalSim_h1)
-            points(rBal ~ F, pch=21, col=transparentColor(colorBlindBlack8[3], opacity=0.6), bg=transparentColor(colorBlindBlack8[3], opacity=0.4), data=RbalSim_h2)
-            points(rBal ~ F, pch=21, col=transparentColor(colorBlindBlack8[4], opacity=0.6), bg=transparentColor(colorBlindBlack8[4], opacity=0.4), data=RbalSim_h3)
+            points(rBal ~ F, pch=21, col=transparentColor(COL8[2], opacity=0.6), bg=transparentColor(COL8[2], opacity=0.4), data=RbalSim_h1)
+            points(rBal ~ F, pch=21, col=transparentColor(COL8[3], opacity=0.6), bg=transparentColor(COL8[3], opacity=0.4), data=RbalSim_h2)
+            points(rBal ~ F, pch=21, col=transparentColor(COL8[4], opacity=0.6), bg=transparentColor(COL8[4], opacity=0.4), data=RbalSim_h3)
         }
         # axes
         axis(1, las=1)
@@ -1040,12 +1529,12 @@ RelBalancingFig  <-  function(F.I = 1/2, h=1/2, favouredMuts = FALSE) {
                    x       =  usr[2]*0.99,
                    y       =  usr[4]*0.99,
                    legend  =  c(expression(paste(1-italic(F))),
-                                expression(paste(Eq(7,B6), "; ", italic(h)==1/2)),
-                                expression(paste(Eq(7,B6), "; ", italic(h)==1/4)),
-                                expression(paste(Eq(7,B6), "; ", italic(h)==1/10))),
+                                expression(paste(Eq(7,B6), "; ", italic(nu)==1/2)),
+                                expression(paste(Eq(7,B6), "; ", italic(nu)==1/4)),
+                                expression(paste(Eq(7,B6), "; ", italic(nu)==1/10))),
                    lty     =  1,
                    lwd     =  3,
-                   col     =  c(colorBlindBlack8[1], colorBlindBlack8[2], colorBlindBlack8[3], colorBlindBlack8[4]),
+                   col     =  c(COL8[1], COL8[2], COL8[3], COL8[4]),
                    cex     =  1,
                    xjust   =  1,
                    yjust   =  1,
@@ -1058,12 +1547,12 @@ RelBalancingFig  <-  function(F.I = 1/2, h=1/2, favouredMuts = FALSE) {
                    x       =  usr[2]*0.99,
                    y       =  usr[4]*0.99,
                    legend  =  c(expression(paste(1-italic(F))),
-                                expression(paste(Eq(10,B15), "; ", italic(h)==1/2)),
-                                expression(paste(Eq(10,B15), "; ", italic(h)==1/4)),
-                                expression(paste(Eq(10,B15), "; ", italic(h)==1/10))),
+                                expression(paste(Eq(10,B15), "; ", italic(nu)==1/2)),
+                                expression(paste(Eq(10,B15), "; ", italic(nu)==1/4)),
+                                expression(paste(Eq(10,B15), "; ", italic(nu)==1/10))),
                    lty     =  1,
                    lwd     =  3,
-                   col     =  c(colorBlindBlack8[1], colorBlindBlack8[2], colorBlindBlack8[3], colorBlindBlack8[4]),
+                   col     =  c(COL8[1], COL8[2], COL8[3], COL8[4]),
                    cex     =  1,
                    xjust   =  1,
                    yjust   =  1,
@@ -1104,7 +1593,7 @@ relMutSizeMaxRBal  <-  function() {
     xMaxs.3   <-  xMax(h=h.3)
 
     # Colors
-    colorBlindBlack8  <- c("#000000", "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7")
+    COL8  <- c("#000000", "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7")
 
     # 
     par(omi=c(0.5, 0.25, 0.25, 0.5), mar = c(5,5,1,1), bty='o', xaxt='s', yaxt='s')
@@ -1114,15 +1603,15 @@ relMutSizeMaxRBal  <-  function() {
         plotGrid(lineCol='grey80')
         box()
         # Generate Curves
-        lines((xMaxFs.1/xMaxs.1) ~ F.values, lwd=2, col=colorBlindBlack8[1])
-        lines((xMaxFs.2/xMaxs.2) ~ F.values, lwd=2, col=colorBlindBlack8[2])
-        lines((xMaxFs.3/xMaxs.3) ~ F.values, lwd=2, col=colorBlindBlack8[3])
+        lines((xMaxFs.1/xMaxs.1) ~ F.values, lwd=2, col=COL8[1])
+        lines((xMaxFs.2/xMaxs.2) ~ F.values, lwd=2, col=COL8[2])
+        lines((xMaxFs.3/xMaxs.3) ~ F.values, lwd=2, col=COL8[3])
         # axes
         axis(1, las=1)
         axis(2, las=1)
         # Plot labels etc.
 #        proportionalLabel(0.5,  1.1,   expression(paste("Small-mutation limit (", italic(x)%->%0, ")")), cex=1.5, adj=c(0.5, 0.5), xpd=NA)        
-        proportionalLabel(-0.25,  0.5, expression(hat(italic(x))/hat(italic(x))*'|'*[F==0]), cex=1.3, adj=c(0.5, 0.5), srt=90, xpd=NA)
+        proportionalLabel(-0.25,  0.5, expression(hat(italic(x))/hat(italic(x))[F==0]), cex=1.3, adj=c(0.5, 0.5), srt=90, xpd=NA)
         proportionalLabel( 0.5,  -0.25,  expression(paste("Inbreeding coefficient (", italic(F), ")")), cex=1.3, adj=c(0.5, 0.5), xpd=NA)
 
         # Legend
@@ -1134,7 +1623,7 @@ relMutSizeMaxRBal  <-  function() {
                             expression(italic(h)==1/10)),
                lty     =  c(1, 1, 1),
                lwd     =  2,
-               col     =  c(colorBlindBlack8[1], colorBlindBlack8[2], colorBlindBlack8[3]),
+               col     =  c(COL8[1], COL8[2], COL8[3]),
                cex     =  1,
                xjust   =  1,
                yjust   =  1,
@@ -1185,7 +1674,7 @@ RelBalancingEstablishedFig  <-  function(F.I = 1/2, h=1/2, Ne = 10^4) {
     sizes  <-  1:1000/200
 
     # Colors
-    colorBlindBlack8  <- c("#000000", "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7")
+    COL8  <- c("#000000", "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7")
 
     # set plot layout
     layout.mat  <-  matrix(c(1,2), nrow=1, ncol=2, byrow=TRUE)
@@ -1208,7 +1697,7 @@ RelBalancingEstablishedFig  <-  function(F.I = 1/2, h=1/2, Ne = 10^4) {
         # Simulations
         RbalSim  <-  read.csv("./out/relBal_smallMut_EstabMuts_Ne1e+05_F0.5_n50_z1_h0.5_reps10000.csv")
 #            RbalSim  <-  relBalancingMutSize_EstabMuts_Sims(F = F.I, Ne=Ne, reps=5*10^3)
-            points(rBal.est ~ x, pch=21, col=transparentColor(colorBlindBlack8[1], opacity=0.6), bg=transparentColor(colorBlindBlack8[1], opacity=0.4), data=RbalSim)
+            points(rBal.est ~ x, pch=21, col=transparentColor(COL8[1], opacity=0.6), bg=transparentColor(COL8[1], opacity=0.4), data=RbalSim)
         # axes
         axis(1, las=1)
         axis(2, las=1)
@@ -1226,7 +1715,7 @@ RelBalancingEstablishedFig  <-  function(F.I = 1/2, h=1/2, Ne = 10^4) {
                             expression(paste(Eq(6)))),
                lty     =  c(1, 3, 1, 3),
                lwd     =  3,
-               col     =  c(colorBlindBlack8[1], colorBlindBlack8[1], "grey60", "grey60"),
+               col     =  c(COL8[1], COL8[1], "grey60", "grey60"),
                cex     =  1,
                xjust   =  1,
                yjust   =  1,
@@ -1239,8 +1728,8 @@ RelBalancingEstablishedFig  <-  function(F.I = 1/2, h=1/2, Ne = 10^4) {
                y       =  usr[4]*0.99,
                legend  =  c(expression(paste("Simulations"))),
                pch     =  21,
-               pt.bg   =  transparentColor(colorBlindBlack8[1], opacity=0.4),
-               col     =  transparentColor(colorBlindBlack8[1], opacity=0.6),
+               pt.bg   =  transparentColor(COL8[1], opacity=0.4),
+               col     =  transparentColor(COL8[1], opacity=0.6),
                cex     =  1,
                xjust   =  1,
                yjust   =  1,
@@ -1256,13 +1745,13 @@ RelBalancingEstablishedFig  <-  function(F.I = 1/2, h=1/2, Ne = 10^4) {
         plotGrid(lineCol='grey80')
         box()
         # Generate Lines + points
-            lines((1 - F.values) ~ F.values, col = colorBlindBlack8[1], lwd = 3)
-            lines(F.values, (1 - F.values)/(1 + F.values), lty = 3, lwd = 2, col = colorBlindBlack8[1])
+            lines((1 - F.values) ~ F.values, col = COL8[1], lwd = 3)
+            lines(F.values, (1 - F.values)/(1 + F.values), lty = 3, lwd = 2, col = COL8[1])
             lines(F.values, (1 - F.values)^2/(1 + F.values)^2, lty = 3, lwd = 2, col = "grey60")
         # Simulations
             RbalSim.F  <-  read.csv("./out/relBal_smallMut_F_EstabMuts_Ne1e+06_n50_z1_h0.5_reps10000.csv", header=TRUE)
 #            RbalSim.F  <-  relBalancingSmallx_EstabMuts_F_Sims(h=1/2, Ne=Ne, reps=10^5)
-            points(rBal.est ~ F, pch=21, col=transparentColor(colorBlindBlack8[1], opacity=0.6), bg=transparentColor(colorBlindBlack8[1], opacity=0.4), data=RbalSim.F)
+            points(rBal.est ~ F, pch=21, col=transparentColor(COL8[1], opacity=0.6), bg=transparentColor(COL8[1], opacity=0.4), data=RbalSim.F)
         # axes
         axis(1, las=1)
         axis(2, labels=NA)
@@ -1279,7 +1768,7 @@ RelBalancingEstablishedFig  <-  function(F.I = 1/2, h=1/2, Ne = 10^4) {
 #                            expression(paste(Eq(17), "; ", italic(h)==1/10))),
 #               lty     =  1,
 #               lwd     =  3,
-#               col     =  c(colorBlindBlack8[1], colorBlindBlack8[2], colorBlindBlack8[3], colorBlindBlack8[4]),
+#               col     =  c(COL8[1], COL8[2], COL8[3], COL8[4]),
 #               cex     =  1,
 #               xjust   =  1,
 #               yjust   =  1,
@@ -1298,14 +1787,6 @@ RelBalancingEstablishedFig  <-  function(F.I = 1/2, h=1/2, Ne = 10^4) {
 ###################################
 ###################################
 # Visualize 2-d FGM for Inbreeding
-
-# InvCircle_F  <-  function(h, F, z) {
-#     c  <-  ((1 - F)/(1 + F))*((1 - h)/h)*z
-#     r  <-  ((1 - F)/(1 + F))*(z/h) + (1 - (1 - F)/(1+F))*z
-# 
-#     c(c,r)
-# }
-
 
 InvCircle_F  <-  function(h, F, z) {
     r  <-  z*(F + (1 - F)*h)/(F + (1 - F)*h^2)
@@ -1446,7 +1927,7 @@ Fisher_2D_ExploreFig <-  function(z = 0.5, h = 1/2, reps=10^4) {
                x       =  usr[2]*0.9,
                y       =  usr[4]*0.99,
                legend  =  c(expression(paste("Balancing sel.")),
-                            expression(paste("Positive sel."))),
+                            expression(paste("Directional sel."))),
                pch     =  21,
                pt.bg   =  c(transparentColor(COL8[3], opacity=0.4),
                             transparentColor(COL8[2], opacity=0.4)),
@@ -1551,6 +2032,1425 @@ Fisher_2D_ExploreFig <-  function(z = 0.5, h = 1/2, reps=10^4) {
         proportionalLabel(0.5,  1.05,   expression(paste(italic(F)," = ", 0.98)), cex=2, adj=c(0.5, 0.5), xpd=NA)
         proportionalLabel( 0.5, -0.2, expression(paste("Dimension 1")), cex=1.3, adj=c(0.5, 0.5), xpd=NA)
 }
+
+
+
+
+# Corresponding bivariate plot of selection coefficients for 2-D 
+# figure of FGM
+Fisher_2D_Explore_KimuraPlotFig <-  function(z = 0.05, h = 1/2, reps=10^4) {
+    
+    # Create data for plotting
+    dat <-  Fisher_2D_ExploreFigSims(z = z, h = h, reps = reps)
+
+    # back-calculate selection coefficients for classic heterozygote advantage model (s.1 and s.2)
+    dat$s1  <-  -dat$t.wt
+    dat$s2  <-  -dat$t.hom
+
+
+    # set plot axes limits
+        yLim  <-  c(min(dat$s2),max(dat$s2))
+        xLim  <-  c(0,max(dat$s1,yLim))
+    if(z == 0.05) {
+        yLim  <-  c(min(dat$s2),0.01)
+        xLim  <-  c(0,0.01)
+    }
+    # Colors
+    COL8  <-  c("#000000", "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7")
+
+    # set plot layout
+    layout.mat  <-  matrix(c(1:6), nrow=2, ncol=3, byrow=TRUE)
+    layout      <-  layout(layout.mat,respect=TRUE)
+
+    # Generate Plot
+    par(omi=c(1, 1, 0.75, 1), mar = c(5,5,1,1), bty='o', xaxt='s', yaxt='s')
+
+     # Panel (A) F = 0
+    plot(NA, axes=FALSE, type='n', main='', xlim = xLim, ylim = yLim, ylab='', xlab='', cex.lab=1.2)
+        usr  <-  par('usr')
+        rect(usr[1], usr[3], usr[2], usr[4], col='white', border=NA)
+        plotGrid(lineCol='grey80')
+        box()
+        # Plot Points
+        points(s2[F == 0.2 & PosSel.out == 0 & BalSel.out == 0] ~ 
+               s1[F == 0.2 & PosSel.out == 0 & BalSel.out == 0], pch=21, col=transparentColor('tomato', opacity=0.6), bg=transparentColor('tomato', opacity=0.4), data=dat)
+        points(s2[F == 0.2 & PosSel.out == 1] ~ 
+               s1[F == 0.2 & PosSel.out == 1], pch=21, col=transparentColor(COL8[2], opacity=0.6), bg=transparentColor(COL8[2], opacity=0.4), data=dat)
+        points(s2[F == 0.2 & BalSel.out == 1] ~ 
+               s1[F == 0.2 & BalSel.out == 1], pch=21, col=transparentColor(COL8[3], opacity=0.6), bg=transparentColor(COL8[3], opacity=0.4), data=dat)
+        lines(x=c(0,1), y=c(0,0), lwd=2, col=COL8[1])
+        lines(x=c(0,0), y=c(0,1), lwd=2, col=COL8[1])
+        # axes
+        axis(1, las=1)
+        axis(2, las=1)
+        # Plot labels etc.
+        proportionalLabel(0.5,  1.05,   expression(paste("Outcrossing")), cex=2, adj=c(0.5, 0.5), xpd=NA)
+        proportionalLabel( -0.2,  0.5, expression(paste("Selection against ", italic(aa), " ",(italic(s[2])))), cex=1.5, adj=c(0.5, 0.5), xpd=NA, srt=90)
+
+     # Panel (B) F = 0.2
+    plot(NA, axes=FALSE, type='n', main='', xlim = xLim, ylim = yLim, ylab='', xlab='', cex.lab=1.2)
+        usr  <-  par('usr')
+        rect(usr[1], usr[3], usr[2], usr[4], col='white', border=NA)
+        plotGrid(lineCol='grey80')
+        box()
+        # Plot Points
+        points(s2[F == 0.2 & PosSel.F == 0 & BalSel.F == 0] ~ 
+               s1[F == 0.2 & PosSel.F == 0 & BalSel.F == 0], pch=21, col=transparentColor('tomato', opacity=0.6), bg=transparentColor('tomato', opacity=0.4), data=dat)
+        points(s2[F == 0.2 & PosSel.F == 1] ~ 
+               s1[F == 0.2 & PosSel.F == 1], pch=21, col=transparentColor(COL8[2], opacity=0.6), bg=transparentColor(COL8[2], opacity=0.4), data=dat)
+        points(s2[F == 0.2 & BalSel.F == 1& s1 > 0 & s2 > 0] ~ 
+               s1[F == 0.2 & BalSel.F == 1& s1 > 0 & s2 > 0], pch=21, col=transparentColor(COL8[3], opacity=0.6), bg=transparentColor(COL8[3], opacity=0.4), data=dat)
+        # Plot invasion boundaries
+        s2.vals  <-  0:1000/1000
+        upper  <-  upper.classic(F=0.2, s.2 = s2.vals)
+        lower  <-  lower.classic(F=0.2, s.2 = s2.vals)
+        lines(upper[upper < 1 ] ~ s2.vals[upper < 1 ], lwd=2, col=COL8[1])
+        lines(lower ~ s2.vals, lwd=2, col=COL8[1])
+        # axes
+        axis(1, las=1)
+        axis(2, las=1)
+        # Plot labels etc.
+        proportionalLabel(0.5,  1.05,   expression(paste(italic(F)," = ", 0.2)), cex=2, adj=c(0.5, 0.5), xpd=NA)
+
+     # Panel (C) F = 0.4
+    plot(NA, axes=FALSE, type='n', main='', xlim = xLim, ylim = yLim, ylab='', xlab='', cex.lab=1.2)
+        usr  <-  par('usr')
+        rect(usr[1], usr[3], usr[2], usr[4], col='white', border=NA)
+        plotGrid(lineCol='grey80')
+        box()
+        # Plot Points
+        points(s2[F == 0.4 & PosSel.F == 0 & BalSel.F == 0 ] ~ 
+               s1[F == 0.4 & PosSel.F == 0 & BalSel.F == 0 ], pch=21, col=transparentColor('tomato', opacity=0.6), bg=transparentColor('tomato', opacity=0.4), data=dat)
+        points(s2[F == 0.4 & PosSel.F == 1 ] ~ 
+               s1[F == 0.4 & PosSel.F == 1 ], pch=21, col=transparentColor(COL8[2], opacity=0.6), bg=transparentColor(COL8[2], opacity=0.4), data=dat)
+        points(s2[F == 0.4 & BalSel.F == 1] ~ 
+               s1[F == 0.4 & BalSel.F == 1], pch=21, col=transparentColor(COL8[3], opacity=0.6), bg=transparentColor(COL8[3], opacity=0.4), data=dat)
+        # Plot invasion boundaries
+        upper  <-  upper.classic(F=0.4, s.2 = s2.vals)
+        lower  <-  lower.classic(F=0.4, s.2 = s2.vals)
+        lines(upper[upper < 1 ] ~ s2.vals[upper < 1 ], lwd=2, col=COL8[1])
+        lines(lower ~ s2.vals, lwd=2, col=COL8[1])
+       # axes
+        axis(1, las=1)
+        axis(2, labels=NA)
+        # Plot labels etc.
+        proportionalLabel(0.5,  1.05,   expression(paste(italic(F)," = ", 0.4)), cex=2, adj=c(0.5, 0.5), xpd=NA)
+        # Legend
+        legend(
+               x       =  usr[2]*1,
+               y       =  usr[4]*1,
+                   legend  =  c(expression(paste("Directional sel. against ", italic(a))),
+                                expression(paste("Balancing sel.")),
+                                expression(paste("Directional sel. for ", italic(a)))),
+               pch     =  21,
+               pt.bg   =  c(transparentColor('tomato', opacity=0.4),
+                            transparentColor(COL8[3], opacity=0.4),
+                            transparentColor(COL8[2], opacity=0.4)),
+               col     =  c(transparentColor('tomato', opacity=0.6),
+                            transparentColor(COL8[3], opacity=0.6),
+                            transparentColor(COL8[2], opacity=0.6)),
+               cex     =  1.5,
+               xjust   =  1,
+               yjust   =  1,
+               bty     =  'n',
+               border  =  NA
+               )
+
+     # Panel (D) F = 0.6
+    plot(NA, axes=FALSE, type='n', main='', xlim = xLim, ylim = yLim, ylab='', xlab='', cex.lab=1.2)
+        usr  <-  par('usr')
+        rect(usr[1], usr[3], usr[2], usr[4], col='white', border=NA)
+        plotGrid(lineCol='grey80')
+        box()
+        # Plot Points
+        points(s2[F == 0.6 & PosSel.F == 0 & BalSel.F == 0 ] ~ 
+               s1[F == 0.6 & PosSel.F == 0 & BalSel.F == 0 ], pch=21, col=transparentColor('tomato', opacity=0.6), bg=transparentColor('tomato', opacity=0.4), data=dat)
+        points(s2[F == 0.6 & PosSel.F == 1 ] ~ 
+               s1[F == 0.6 & PosSel.F == 1 ], pch=21, col=transparentColor(COL8[2], opacity=0.6), bg=transparentColor(COL8[2], opacity=0.4), data=dat)
+        points(s2[F == 0.6 & BalSel.F == 1 ] ~ 
+               s1[F == 0.6 & BalSel.F == 1 ], pch=21, col=transparentColor(COL8[3], opacity=0.6), bg=transparentColor(COL8[3], opacity=0.4), data=dat)
+        # Plot invasion boundaries
+        upper  <-  upper.classic(F=0.6, s.2 = s2.vals)
+        lower  <-  lower.classic(F=0.6, s.2 = s2.vals)
+        lines(upper[upper < 1 ] ~ s2.vals[upper < 1 ], lwd=2, col=COL8[1])
+        lines(lower ~ s2.vals, lwd=2, col=COL8[1])
+       # axes
+        axis(1, las=1)
+        axis(2, las=1)
+        # Plot labels etc.
+        proportionalLabel(0.5,  1.05,   expression(paste(italic(F)," = ", 0.6)), cex=2, adj=c(0.5, 0.5), xpd=NA)        
+        proportionalLabel( -0.2,  0.5, expression(paste("Selection against ", italic(aa), " ",(italic(s[2])))), cex=1.5, adj=c(0.5, 0.5), xpd=NA, srt=90)
+        proportionalLabel( 0.5,  -0.2, expression(paste("Selection against ", italic(AA), " ",(italic(s[1])))), cex=1.5, adj=c(0.5, 0.5), xpd=NA)        
+
+     # Panel (E) F = 0.8
+    plot(NA, axes=FALSE, type='n', main='', xlim = xLim, ylim = yLim, ylab='', xlab='', cex.lab=1.2)
+        usr  <-  par('usr')
+        rect(usr[1], usr[3], usr[2], usr[4], col='white', border=NA)
+        plotGrid(lineCol='grey80')
+        box()
+        # Plot Points
+        points(s2[F == 0.8 & PosSel.F == 0 & BalSel.F == 0] ~ 
+               s1[F == 0.8 & PosSel.F == 0 & BalSel.F == 0], pch=21, col=transparentColor('tomato', opacity=0.6), bg=transparentColor('tomato', opacity=0.4), data=dat)
+        points(s2[F == 0.8 & PosSel.F == 1] ~ 
+               s1[F == 0.8 & PosSel.F == 1], pch=21, col=transparentColor(COL8[2], opacity=0.6), bg=transparentColor(COL8[2], opacity=0.4), data=dat)
+        points(s2[F == 0.8 & BalSel.F == 1] ~ 
+               s1[F == 0.8 & BalSel.F == 1], pch=21, col=transparentColor(COL8[3], opacity=0.6), bg=transparentColor(COL8[3], opacity=0.4), data=dat)
+        # Plot invasion boundaries
+        upper  <-  upper.classic(F=0.8, s.2 = s2.vals)
+        lower  <-  lower.classic(F=0.8, s.2 = s2.vals)
+        lines(upper[upper < 1 ] ~ s2.vals[upper < 1 ], lwd=2, col=COL8[1])
+        lines(lower ~ s2.vals, lwd=2, col=COL8[1])
+       # axes
+        axis(1, las=1)
+        axis(2, labels=NA)
+        # Plot labels etc.
+        proportionalLabel(0.5,  1.05,   expression(paste(italic(F)," = ", 0.8)), cex=2, adj=c(0.5, 0.5), xpd=NA)
+        proportionalLabel( 0.5,  -0.2, expression(paste("Selection against ", italic(AA), " ",(italic(s[1])))), cex=1.5, adj=c(0.5, 0.5), xpd=NA)        
+
+     # Panel (F) F = 0.98
+    plot(NA, axes=FALSE, type='n', main='', xlim = xLim, ylim = yLim, ylab='', xlab='', cex.lab=1.2)
+        usr  <-  par('usr')
+        rect(usr[1], usr[3], usr[2], usr[4], col='white', border=NA)
+        plotGrid(lineCol='grey80')
+        box()
+           # Plot Points
+        points(s2[F == 0.98 & PosSel.F == 0 & BalSel.F == 0] ~ 
+               s1[F == 0.98 & PosSel.F == 0 & BalSel.F == 0], pch=21, col=transparentColor('tomato', opacity=0.6), bg=transparentColor('tomato', opacity=0.4), data=dat)
+        points(s2[F == 0.98 & PosSel.F == 1] ~ 
+               s1[F == 0.98 & PosSel.F == 1], pch=21, col=transparentColor(COL8[2], opacity=0.6), bg=transparentColor(COL8[2], opacity=0.4), data=dat)
+        points(s2[F == 0.98 & BalSel.F == 1] ~ 
+               s1[F == 0.98 & BalSel.F == 1], pch=21, col=transparentColor(COL8[3], opacity=0.6), bg=transparentColor(COL8[3], opacity=0.4), data=dat)
+        # Plot invasion boundaries
+        s2.vals  <-  0:1000/1000
+        for(i in 1:4){
+            upper  <-  upper.classic(F=0.98, s.2 = s2.vals)
+            lower  <-  lower.classic(F=0.98, s.2 = s2.vals)
+            lines(upper[upper < 1 ] ~ s2.vals[upper < 1 ], lwd=2, col=COL8[1])
+            lines(lower ~ s2.vals, lwd=2, col=COL8[1])
+        }
+       # axes
+        axis(1, las=1)
+        axis(2, labels=NA)
+        # Plot labels etc.
+        proportionalLabel(0.5,  1.05,   expression(paste(italic(F)," = ", 0.98)), cex=2, adj=c(0.5, 0.5), xpd=NA)
+        proportionalLabel( 0.5,  -0.2, expression(paste("Selection against ", italic(AA), " ",(italic(s[1])))), cex=1.5, adj=c(0.5, 0.5), xpd=NA)        
+}
+    
+
+
+
+
+#########################
+# Generalized plot of Bivariate distribution of selection coefficients
+
+# Bivariate plot of selection coefficients for any number of traits
+# arg:  coeffs = "CLASSIC" or "FGM" toggles whether plot shows
+# the classic s1, s2 paramerization of het. adv. or FGM s.het, s.hom
+BivariateSelFig <-  function(xAvg = 5, n = 50, z = 1, h = 1/2, reps=10^4, coeffs = "CLASSIC", smallMuts = FALSE, yLim = NA, xLim = NA) {
+    
+    # Create data for plotting
+    dat <-  BivariateSelFigSims(xAvg=xAvg, n = n, z = z, h = h, reps = reps, smallMuts = smallMuts)
+
+    # back-calculate selection coefficients for classic heterozygote advantage model (s.1 and s.2)
+    dat$s1  <-  -dat$t.wt
+    dat$s2  <-  -dat$t.hom
+
+    # Colors
+    COL8  <-  c("#000000", "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7")
+
+    # set plot layout
+    layout.mat  <-  matrix(c(1:6), nrow=2, ncol=3, byrow=TRUE)
+    layout      <-  layout(layout.mat,respect=TRUE)
+
+    # Generate Plot
+    par(omi=c(1, 1, 0.75, 1), mar = c(5,5,1,1), bty='o', xaxt='s', yaxt='s')
+
+    if(coeffs == "CLASSIC"){
+        
+        # set plot axes limits
+        if(is.na(yLim)[1]) {
+            yLim  <-  c(min(dat$s2),max(dat$s2))
+        }
+        if(is.na(xLim)[1]) {
+            xLim  <-  c(min(dat$s1),max(dat$s1))
+        }
+        
+         # Panel (A) F = 0
+        plot(NA, axes=FALSE, type='n', main='', xlim = xLim, ylim = yLim, ylab='', xlab='', cex.lab=1.2)
+            usr  <-  par('usr')
+            rect(usr[1], usr[3], usr[2], usr[4], col='white', border=NA)
+            plotGrid(lineCol='grey80')
+            box()
+            # Plot Points
+            points(s2[F == 0 & PosSel.out == 0 & BalSel.out == 0] ~ 
+                   s1[F == 0 & PosSel.out == 0 & BalSel.out == 0], pch=21, col=transparentColor('tomato', opacity=0.6), bg=transparentColor('tomato', opacity=0.4), data=dat)
+            points(s2[F == 0 & PosSel.out == 1] ~ 
+                   s1[F == 0 & PosSel.out == 1], pch=21, col=transparentColor(COL8[2], opacity=0.6), bg=transparentColor(COL8[2], opacity=0.4), data=dat)
+            points(s2[F == 0 & BalSel.out == 1] ~ 
+                   s1[F == 0 & BalSel.out == 1], pch=21, col=transparentColor(COL8[3], opacity=0.6), bg=transparentColor(COL8[3], opacity=0.4), data=dat)
+            lines(x=c(0,1), y=c(0,0), lwd=2, col=COL8[1], lty=2)
+            lines(x=c(0,0), y=c(0,1), lwd=2, col=COL8[1], lty=2)
+            # axes
+            axis(1, labels=NA)
+            axis(2, las=1)
+            # Plot labels etc.
+            proportionalLabel(0.5,  1.05,   expression(paste("Outcrossing")), cex=2, adj=c(0.5, 0.5), xpd=NA)
+            proportionalLabel( -0.2,  0.5, expression(paste("Selection against ", italic(aa), " ",(italic(s[2])))), cex=1.5, adj=c(0.5, 0.5), xpd=NA, srt=90)
+
+    
+         # Panel (B) F = 0.2
+        plot(NA, axes=FALSE, type='n', main='', xlim = xLim, ylim = yLim, ylab='', xlab='', cex.lab=1.2)
+            usr  <-  par('usr')
+            rect(usr[1], usr[3], usr[2], usr[4], col='white', border=NA)
+            plotGrid(lineCol='grey80')
+            box()
+            # Plot Points
+            points(s2[F == 0.2 & PosSel.F == 0 & BalSel.F == 0] ~ 
+                   s1[F == 0.2 & PosSel.F == 0 & BalSel.F == 0], pch=21, col=transparentColor('tomato', opacity=0.6), bg=transparentColor('tomato', opacity=0.4), data=dat)
+            points(s2[F == 0.2 & PosSel.F == 1] ~ 
+                   s1[F == 0.2 & PosSel.F == 1], pch=21, col=transparentColor(COL8[2], opacity=0.6), bg=transparentColor(COL8[2], opacity=0.4), data=dat)
+            points(s2[F == 0.2 & BalSel.F == 1] ~ 
+                   s1[F == 0.2 & BalSel.F == 1], pch=21, col=transparentColor(COL8[3], opacity=0.6), bg=transparentColor(COL8[3], opacity=0.4), data=dat)
+            # Plot invasion boundaries
+            s2.vals  <-  0:1000/1000
+                upper  <-  upper.classic(F=0.2, s.2 = s2.vals)
+                lower  <-  lower.classic(F=0.2, s.2 = s2.vals)
+                lines(upper[upper < 1 ] ~ s2.vals[upper < 1 ], lwd=2, col=COL8[1], lty=2)
+                lines(lower ~ s2.vals, lwd=2, col=COL8[1], lty=2)
+            # axes
+            axis(1, labels=NA)
+            axis(2, labels=NA)
+            # Plot labels etc.
+            proportionalLabel(0.5,  1.05,   expression(paste(italic(F)," = ", 0.2)), cex=2, adj=c(0.5, 0.5), xpd=NA)
+    
+         # Panel (C) F = 0.4
+        plot(NA, axes=FALSE, type='n', main='', xlim = xLim, ylim = yLim, ylab='', xlab='', cex.lab=1.2)
+            usr  <-  par('usr')
+            rect(usr[1], usr[3], usr[2], usr[4], col='white', border=NA)
+            plotGrid(lineCol='grey80')
+            box()
+            # Plot Points
+            points(s2[F == 0.4 & PosSel.F == 0 & BalSel.F == 0 ] ~ 
+                   s1[F == 0.4 & PosSel.F == 0 & BalSel.F == 0 ], pch=21, col=transparentColor('tomato', opacity=0.6), bg=transparentColor('tomato', opacity=0.4), data=dat)
+            points(s2[F == 0.4 & PosSel.F == 1 ] ~ 
+                   s1[F == 0.4 & PosSel.F == 1 ], pch=21, col=transparentColor(COL8[2], opacity=0.6), bg=transparentColor(COL8[2], opacity=0.4), data=dat)
+            points(s2[F == 0.4 & BalSel.F == 1] ~ 
+                   s1[F == 0.4 & BalSel.F == 1], pch=21, col=transparentColor(COL8[3], opacity=0.6), bg=transparentColor(COL8[3], opacity=0.4), data=dat)
+            # Plot invasion boundaries
+            s2.vals  <-  0:1000/1000
+                upper  <-  upper.classic(F=0.4, s.2 = s2.vals)
+                lower  <-  lower.classic(F=0.4, s.2 = s2.vals)
+                lines(upper[upper < 1 ] ~ s2.vals[upper < 1 ], lwd=2, col=COL8[1], lty=2)
+                lines(lower ~ s2.vals, lwd=2, col=COL8[1], lty=2)
+           # axes
+            axis(1, labels=NA)
+            axis(2, labels=NA)
+            # Plot labels etc.
+            proportionalLabel(0.5,  1.05,   expression(paste(italic(F)," = ", 0.4)), cex=2, adj=c(0.5, 0.5), xpd=NA)
+                # Legend
+            legend(
+                   x       =  usr[2]*1,
+                   y       =  usr[4]*1,
+                   legend  =  c(expression(paste("Directional sel. against ", italic(a))),
+                                expression(paste("Balancing sel.")),
+                                expression(paste("Directional sel. for ", italic(a)))),
+                   pch     =  21,
+                   pt.bg   =  c(transparentColor('tomato', opacity=0.4),
+                                transparentColor(COL8[3], opacity=0.4),
+                                transparentColor(COL8[2], opacity=0.4)),
+                   col     =  c(transparentColor('tomato', opacity=0.6),
+                                transparentColor(COL8[3], opacity=0.6),
+                                transparentColor(COL8[2], opacity=0.6)),
+                   cex     =  1.5,
+                   xjust   =  1,
+                   yjust   =  1,
+                   bty     =  'n',
+                   border  =  NA
+                   )
+
+         # Panel (D) F = 0.6
+        plot(NA, axes=FALSE, type='n', main='', xlim = xLim, ylim = yLim, ylab='', xlab='', cex.lab=1.2)
+            usr  <-  par('usr')
+            rect(usr[1], usr[3], usr[2], usr[4], col='white', border=NA)
+            plotGrid(lineCol='grey80')
+            box()
+            # Plot Points
+            points(s2[F == 0.6 & PosSel.F == 0 & BalSel.F == 0 ] ~ 
+                   s1[F == 0.6 & PosSel.F == 0 & BalSel.F == 0 ], pch=21, col=transparentColor('tomato', opacity=0.6), bg=transparentColor('tomato', opacity=0.4), data=dat)
+            points(s2[F == 0.6 & PosSel.F == 1 ] ~ 
+                   s1[F == 0.6 & PosSel.F == 1 ], pch=21, col=transparentColor(COL8[2], opacity=0.6), bg=transparentColor(COL8[2], opacity=0.4), data=dat)
+            points(s2[F == 0.6 & BalSel.F == 1 ] ~ 
+                   s1[F == 0.6 & BalSel.F == 1 ], pch=21, col=transparentColor(COL8[3], opacity=0.6), bg=transparentColor(COL8[3], opacity=0.4), data=dat)
+            # Plot invasion boundaries
+            s2.vals  <-  0:1000/1000
+                upper  <-  upper.classic(F=0.6, s.2 = s2.vals)
+                lower  <-  lower.classic(F=0.6, s.2 = s2.vals)
+                lines(upper[upper < 1 ] ~ s2.vals[upper < 1 ], lwd=2, col=COL8[1], lty=2)
+                lines(lower ~ s2.vals, lwd=2, col=COL8[1], lty=2)
+           # axes
+            axis(1, las=1)
+            axis(2, las=1)
+            # Plot labels etc.
+            proportionalLabel(0.5,  1.05,   expression(paste(italic(F)," = ", 0.6)), cex=2, adj=c(0.5, 0.5), xpd=NA)        
+            proportionalLabel( -0.2,  0.5, expression(paste("Selection against ", italic(aa), " ",(italic(s[2])))), cex=1.5, adj=c(0.5, 0.5), xpd=NA, srt=90)
+            proportionalLabel( 0.5,  -0.2, expression(paste("Selection against ", italic(AA), " ",(italic(s[1])))), cex=1.5, adj=c(0.5, 0.5), xpd=NA)        
+    
+         # Panel (E) F = 0.8
+        plot(NA, axes=FALSE, type='n', main='', xlim = xLim, ylim = yLim, ylab='', xlab='', cex.lab=1.2)
+            usr  <-  par('usr')
+            rect(usr[1], usr[3], usr[2], usr[4], col='white', border=NA)
+            plotGrid(lineCol='grey80')
+            box()
+            # Plot Points
+            points(s2[F == 0.8 & PosSel.F == 0 & BalSel.F == 0] ~ 
+                   s1[F == 0.8 & PosSel.F == 0 & BalSel.F == 0], pch=21, col=transparentColor('tomato', opacity=0.6), bg=transparentColor('tomato', opacity=0.4), data=dat)
+            points(s2[F == 0.8 & PosSel.F == 1] ~ 
+                   s1[F == 0.8 & PosSel.F == 1], pch=21, col=transparentColor(COL8[2], opacity=0.6), bg=transparentColor(COL8[2], opacity=0.4), data=dat)
+            points(s2[F == 0.8 & BalSel.F == 1] ~ 
+                   s1[F == 0.8 & BalSel.F == 1], pch=21, col=transparentColor(COL8[3], opacity=0.6), bg=transparentColor(COL8[3], opacity=0.4), data=dat)
+            # Plot invasion boundaries
+            s2.vals  <-  0:1000/1000
+                upper  <-  upper.classic(F=0.8, s.2 = s2.vals)
+                lower  <-  lower.classic(F=0.8, s.2 = s2.vals)
+                lines(upper[upper < 1 ] ~ s2.vals[upper < 1 ], lwd=2, col=COL8[1], lty=2)
+                lines(lower ~ s2.vals, lwd=2, col=COL8[1], lty=2)
+           # axes
+            axis(1, las=1)
+            axis(2, labels=NA)
+            # Plot labels etc.
+            proportionalLabel(0.5,  1.05,   expression(paste(italic(F)," = ", 0.8)), cex=2, adj=c(0.5, 0.5), xpd=NA)
+            proportionalLabel( 0.5,  -0.2, expression(paste("Selection against ", italic(AA), " ",(italic(s[1])))), cex=1.5, adj=c(0.5, 0.5), xpd=NA)        
+    
+         # Panel (F) F = 0.9
+        plot(NA, axes=FALSE, type='n', main='', xlim = xLim, ylim = yLim, ylab='', xlab='', cex.lab=1.2)
+            usr  <-  par('usr')
+            rect(usr[1], usr[3], usr[2], usr[4], col='white', border=NA)
+            plotGrid(lineCol='grey80')
+            box()
+               # Plot Points
+            points(s2[F == 0.9 & PosSel.F == 0 & BalSel.F == 0] ~ 
+                   s1[F == 0.9 & PosSel.F == 0 & BalSel.F == 0], pch=21, col=transparentColor('tomato', opacity=0.6), bg=transparentColor('tomato', opacity=0.4), data=dat)
+            points(s2[F == 0.9 & PosSel.F == 1] ~ 
+                   s1[F == 0.9 & PosSel.F == 1], pch=21, col=transparentColor(COL8[2], opacity=0.6), bg=transparentColor(COL8[2], opacity=0.4), data=dat)
+            points(s2[F == 0.9 & BalSel.F == 1] ~ 
+                   s1[F == 0.9 & BalSel.F == 1], pch=21, col=transparentColor(COL8[3], opacity=0.6), bg=transparentColor(COL8[3], opacity=0.4), data=dat)
+            # Plot invasion boundaries
+            s2.vals  <-  0:1000/1000
+                upper  <-  upper.classic(F=0.9, s.2 = s2.vals)
+                lower  <-  lower.classic(F=0.9, s.2 = s2.vals)
+                lines(upper[upper < 1 ] ~ s2.vals[upper < 1 ], lwd=2, col=COL8[1], lty=2)
+                lines(lower ~ s2.vals, lwd=2, col=COL8[1], lty=2)
+           # axes
+            axis(1, las=1)
+            axis(2, labels=NA)
+            # Plot labels etc.
+            proportionalLabel(0.5,  1.05,   expression(paste(italic(F)," = ", 0.9)), cex=2, adj=c(0.5, 0.5), xpd=NA)
+            proportionalLabel( 0.5,  -0.2, expression(paste("Selection against ", italic(AA), " ",(italic(s[1])))), cex=1.5, adj=c(0.5, 0.5), xpd=NA)        
+    }
+
+    # Using standard FGM s.het, s.hom coefficients
+    if(coeffs == "FGM"){
+        
+        if(is.na(xLim)[1]) {
+            xLim  <-  c(min(dat$s.hom),max(dat$s.hom))
+        }
+        if(is.na(yLim)[1]) {
+            yLim  <-  c(min(dat$s.het),max(dat$s.het))
+        }
+
+         # Panel (A) F = 0
+        plot(NA, axes=FALSE, type='n', main='', xlim = xLim, ylim = yLim, ylab='', xlab='', cex.lab=1.2)
+            usr  <-  par('usr')
+            rect(usr[1], usr[3], usr[2], usr[4], col='white', border=NA)
+            plotGrid(lineCol='grey80')
+            box()
+            # Plot Points
+            points(s.het[F == 0 & PosSel.out == 0 & BalSel.out == 0] ~ 
+                   s.hom[F == 0 & PosSel.out == 0 & BalSel.out == 0], pch=21, col=transparentColor('tomato', opacity=0.6), bg=transparentColor('tomato', opacity=0.4), data=dat)
+            points(s.het[F == 0 & PosSel.out == 1] ~ 
+                   s.hom[F == 0 & PosSel.out == 1], pch=21, col=transparentColor(COL8[2], opacity=0.6), bg=transparentColor(COL8[2], opacity=0.4), data=dat)
+            points(s.het[F == 0 & BalSel.out == 1] ~ 
+                   s.hom[F == 0 & BalSel.out == 1], pch=21, col=transparentColor(COL8[3], opacity=0.6), bg=transparentColor(COL8[3], opacity=0.4), data=dat)
+            # invasion conditions
+#            lines(x=c(0,1), y=c(0,1), lwd=2, col=COL8[1], lty=2)
+#            lines(x=c(0,0), y=c(0,-1), lwd=2, col=COL8[1], lty=2)
+            lines(x=c(0,1), y=c(0,1), lwd=2, col=COL8[1], lty=2)
+            lines(x=c(-1,0), y=c(0,0), lwd=2, col=COL8[1], lty=2)
+            abline(h=0, lwd=1, lty=3)
+            abline(v=0, lwd=1, lty=3)
+            # axes
+            axis(1, labels=NA)
+            axis(2, las=1)
+            # Plot labels etc.
+            proportionalLabel(0.5,  1.05,   expression(paste("Outcrossing")), cex=2, adj=c(0.5, 0.5), xpd=NA)
+            proportionalLabel( -0.2,  0.5, expression(paste("Selection on ", italic(Aa), " ",(italic(s[het])))), cex=1.5, adj=c(0.5, 0.5), xpd=NA, srt=90)
+            # Legend
+            legend(
+                   x       =  usr[1] + 0.6*(usr[2]-usr[1]),
+                   y       =  usr[4]*0.99,# - 0.15*(usr[4]-usr[3]),
+                   legend  =  c(expression(paste("Directional sel. for ", italic(a))),
+                                expression(paste("Balancing sel.")),
+                                expression(paste("Directional sel. against ", italic(a)))),
+                   pch     =  21,
+                   pt.bg   =  c(transparentColor(COL8[2], opacity=0.4),
+                                transparentColor(COL8[3], opacity=0.4),
+                                transparentColor('tomato', opacity=0.4)),
+                   col     =  c(transparentColor(COL8[2], opacity=0.6),
+                                transparentColor(COL8[3], opacity=0.6),
+                                transparentColor('tomato', opacity=0.6)),
+                   cex     =  1.5,
+                   xjust   =  1,
+                   yjust   =  1,
+                   bty     =  'n',
+                   border  =  NA
+                   )
+    
+         # Panel (B) F = 0.2
+        plot(NA, axes=FALSE, type='n', main='', xlim = xLim, ylim = yLim, ylab='', xlab='', cex.lab=1.2)
+            usr  <-  par('usr')
+            rect(usr[1], usr[3], usr[2], usr[4], col='white', border=NA)
+            plotGrid(lineCol='grey80')
+            box()
+            # Plot Points
+            points(s.het[F == 0.2 & PosSel.F == 0 & BalSel.F == 0] ~ 
+                   s.hom[F == 0.2 & PosSel.F == 0 & BalSel.F == 0], pch=21, col=transparentColor('tomato', opacity=0.6), bg=transparentColor('tomato', opacity=0.4), data=dat)
+            points(s.het[F == 0.2 & PosSel.F == 1] ~ 
+                   s.hom[F == 0.2 & PosSel.F == 1], pch=21, col=transparentColor(COL8[2], opacity=0.6), bg=transparentColor(COL8[2], opacity=0.4), data=dat)
+            points(s.het[F == 0.2 & BalSel.F == 1] ~ 
+                   s.hom[F == 0.2 & BalSel.F == 1], pch=21, col=transparentColor(COL8[3], opacity=0.6), bg=transparentColor(COL8[3], opacity=0.4), data=dat)
+            # Plot invasion boundaries
+#            s.het.vals  <-  0:1000/1000
+#                upper  <-  upper.FGM(F=0.2, s.het = s.het.vals)
+#                lower  <-  lower.FGM(F=0.2, s.het = s.het.vals)
+#                lines(upper[upper < 1 ] ~ s.het.vals, lwd=2, col=COL8[1], lty=2)
+#                lines(lower ~ s.het.vals, lwd=2, col=COL8[1], lty=2)
+            s.hom.vals  <-  0:1000/1000
+                upper  <-  upper.FGM2(F=0.2, s.hom = s.hom.vals)
+                lower  <-  lower.FGM2(F=0.2, s.hom = rev(-s.hom.vals))
+                lines(upper ~ s.hom.vals, lwd=2, col=COL8[1], lty=2)
+                lines(lower ~ rev(-s.hom.vals), lwd=2, col=COL8[1], lty=2)
+            abline(h=0, lwd=1, lty=3)
+            abline(v=0, lwd=1, lty=3)
+            # axes
+            axis(1, labels=NA)
+            axis(2, labels=NA)
+            # Plot labels etc.
+            proportionalLabel(0.5,  1.05,   expression(paste(italic(F)," = ", 0.2)), cex=2, adj=c(0.5, 0.5), xpd=NA)
+    
+         # Panel (C) F = 0.4
+        plot(NA, axes=FALSE, type='n', main='', xlim = xLim, ylim = yLim, ylab='', xlab='', cex.lab=1.2)
+            usr  <-  par('usr')
+            rect(usr[1], usr[3], usr[2], usr[4], col='white', border=NA)
+            plotGrid(lineCol='grey80')
+            box()
+            # Plot Points
+            points(s.het[F == 0.4 & PosSel.F == 0 & BalSel.F == 0 ] ~ 
+                   s.hom[F == 0.4 & PosSel.F == 0 & BalSel.F == 0 ], pch=21, col=transparentColor('tomato', opacity=0.6), bg=transparentColor('tomato', opacity=0.4), data=dat)
+            points(s.het[F == 0.4 & PosSel.F == 1 ] ~ 
+                   s.hom[F == 0.4 & PosSel.F == 1 ], pch=21, col=transparentColor(COL8[2], opacity=0.6), bg=transparentColor(COL8[2], opacity=0.4), data=dat)
+            points(s.het[F == 0.4 & BalSel.F == 1] ~ 
+                   s.hom[F == 0.4 & BalSel.F == 1], pch=21, col=transparentColor(COL8[3], opacity=0.6), bg=transparentColor(COL8[3], opacity=0.4), data=dat)
+            # Plot invasion boundaries
+#            upper  <-  upper.FGM(F=0.4, s.het = s.het.vals)
+#            lower  <-  lower.FGM(F=0.4, s.het = s.het.vals)
+#            lines(upper[upper < 1 ] ~ s.het.vals, lwd=2, col=COL8[1], lty=2)
+#            lines(lower ~ s.het.vals, lwd=2, col=COL8[1], lty=2)
+                upper  <-  upper.FGM2(F=0.4, s.hom = s.hom.vals)
+                lower  <-  lower.FGM2(F=0.4, s.hom = rev(-s.hom.vals))
+                lines(upper ~ s.hom.vals, lwd=2, col=COL8[1], lty=2)
+                lines(lower ~ rev(-s.hom.vals), lwd=2, col=COL8[1], lty=2)
+            abline(h=0, lwd=1, lty=3)
+            abline(v=0, lwd=1, lty=3)
+           # axes
+            axis(1, labels=NA)
+            axis(2, labels=NA)
+            # Plot labels etc.
+            proportionalLabel(0.5,  1.05,   expression(paste(italic(F)," = ", 0.4)), cex=2, adj=c(0.5, 0.5), xpd=NA)
+    
+         # Panel (D) F = 0.6
+        plot(NA, axes=FALSE, type='n', main='', xlim = xLim, ylim = yLim, ylab='', xlab='', cex.lab=1.2)
+            usr  <-  par('usr')
+            rect(usr[1], usr[3], usr[2], usr[4], col='white', border=NA)
+            plotGrid(lineCol='grey80')
+            box()
+            # Plot Points
+            points(s.het[F == 0.6 & PosSel.F == 0 & BalSel.F == 0 ] ~ 
+                   s.hom[F == 0.6 & PosSel.F == 0 & BalSel.F == 0 ], pch=21, col=transparentColor('tomato', opacity=0.6), bg=transparentColor('tomato', opacity=0.4), data=dat)
+            points(s.het[F == 0.6 & PosSel.F == 1 ] ~ 
+                   s.hom[F == 0.6 & PosSel.F == 1 ], pch=21, col=transparentColor(COL8[2], opacity=0.6), bg=transparentColor(COL8[2], opacity=0.4), data=dat)
+            points(s.het[F == 0.6 & BalSel.F == 1 ] ~ 
+                   s.hom[F == 0.6 & BalSel.F == 1 ], pch=21, col=transparentColor(COL8[3], opacity=0.6), bg=transparentColor(COL8[3], opacity=0.4), data=dat)
+            # Plot invasion boundaries
+#            upper  <-  upper.FGM(F=0.6, s.het = s.het.vals)
+#            lower  <-  lower.FGM(F=0.6, s.het = s.het.vals)
+#            lines(upper[upper < 1 ] ~ s.het.vals, lwd=2, col=COL8[1], lty=2)
+#            lines(lower ~ s.het.vals, lwd=2, col=COL8[1], lty=2)
+            upper  <-  upper.FGM2(F=0.6, s.hom = s.hom.vals)
+            lower  <-  lower.FGM2(F=0.6, s.hom = rev(-s.hom.vals))
+            lines(upper ~ s.hom.vals, lwd=2, col=COL8[1], lty=2)
+            lines(lower ~ rev(-s.hom.vals), lwd=2, col=COL8[1], lty=2)
+            # benchmark shet=0, shom=0 axes
+            abline(h=0, lwd=1, lty=3)
+            abline(v=0, lwd=1, lty=3)
+           # axes
+            axis(1, las=1)
+            axis(2, las=1)
+            # Plot labels etc.
+            proportionalLabel(0.5,  1.05,   expression(paste(italic(F)," = ", 0.6)), cex=2, adj=c(0.5, 0.5), xpd=NA)        
+            proportionalLabel( -0.2,  0.5, expression(paste("Selection on ", italic(Aa), " ",(italic(s[het])))), cex=1.5, adj=c(0.5, 0.5), xpd=NA, srt=90)
+            proportionalLabel( 0.5,  -0.2, expression(paste("Selection on ", italic(aa), " ",(italic(s[hom])))), cex=1.5, adj=c(0.5, 0.5), xpd=NA)        
+    
+         # Panel (E) F = 0.8
+        plot(NA, axes=FALSE, type='n', main='', xlim = xLim, ylim = yLim, ylab='', xlab='', cex.lab=1.2)
+            usr  <-  par('usr')
+            rect(usr[1], usr[3], usr[2], usr[4], col='white', border=NA)
+            plotGrid(lineCol='grey80')
+            box()
+            # Plot Points
+            points(s.het[F == 0.8 & PosSel.F == 0 & BalSel.F == 0] ~ 
+                   s.hom[F == 0.8 & PosSel.F == 0 & BalSel.F == 0], pch=21, col=transparentColor('tomato', opacity=0.6), bg=transparentColor('tomato', opacity=0.4), data=dat)
+            points(s.het[F == 0.8 & PosSel.F == 1] ~ 
+                   s.hom[F == 0.8 & PosSel.F == 1], pch=21, col=transparentColor(COL8[2], opacity=0.6), bg=transparentColor(COL8[2], opacity=0.4), data=dat)
+            points(s.het[F == 0.8 & BalSel.F == 1] ~ 
+                   s.hom[F == 0.8 & BalSel.F == 1], pch=21, col=transparentColor(COL8[3], opacity=0.6), bg=transparentColor(COL8[3], opacity=0.4), data=dat)
+            # Plot invasion boundaries
+#            upper  <-  upper.FGM(F=0.8, s.het = s.het.vals)
+#            lower  <-  lower.FGM(F=0.8, s.het = s.het.vals)
+#            lines(upper[upper < 1 ] ~ s.het.vals, lwd=2, col=COL8[1], lty=2)
+#            lines(lower ~ s.het.vals, lwd=2, col=COL8[1], lty=2)
+            upper  <-  upper.FGM2(F=0.8, s.hom = s.hom.vals)
+            lower  <-  lower.FGM2(F=0.8, s.hom = rev(-s.hom.vals))
+            lines(upper ~ s.hom.vals, lwd=2, col=COL8[1], lty=2)
+            lines(lower ~ rev(-s.hom.vals), lwd=2, col=COL8[1], lty=2)
+            abline(h=0, lwd=1, lty=3)
+            abline(v=0, lwd=1, lty=3)
+           # axes
+            axis(1, las=1)
+            axis(2, labels=NA)
+            # Plot labels etc.
+            proportionalLabel(0.5,  1.05,   expression(paste(italic(F)," = ", 0.8)), cex=2, adj=c(0.5, 0.5), xpd=NA)
+            proportionalLabel( 0.5,  -0.2, expression(paste("Selection on ", italic(aa), " ",(italic(s[hom])))), cex=1.5, adj=c(0.5, 0.5), xpd=NA)        
+    
+         # Panel (F) F = 0.9
+        plot(NA, axes=FALSE, type='n', main='', xlim = xLim, ylim = yLim, ylab='', xlab='', cex.lab=1.2)
+            usr  <-  par('usr')
+            rect(usr[1], usr[3], usr[2], usr[4], col='white', border=NA)
+            plotGrid(lineCol='grey80')
+            box()
+               # Plot Points
+            points(s.het[F == 0.9 & PosSel.F == 0 & BalSel.F == 0] ~ 
+                   s.hom[F == 0.9 & PosSel.F == 0 & BalSel.F == 0], pch=21, col=transparentColor('tomato', opacity=0.6), bg=transparentColor('tomato', opacity=0.4), data=dat)
+            points(s.het[F == 0.9 & PosSel.F == 1] ~ 
+                   s.hom[F == 0.9 & PosSel.F == 1], pch=21, col=transparentColor(COL8[2], opacity=0.6), bg=transparentColor(COL8[2], opacity=0.4), data=dat)
+            points(s.het[F == 0.9 & BalSel.F == 1] ~ 
+                   s.hom[F == 0.9 & BalSel.F == 1], pch=21, col=transparentColor(COL8[3], opacity=0.6), bg=transparentColor(COL8[3], opacity=0.4), data=dat)
+            # Plot invasion boundaries
+#            upper  <-  upper.FGM(F=0.9, s.het = s.het.vals)
+#            lower  <-  lower.FGM(F=0.9, s.het = s.het.vals)
+#            lines(upper[upper < 1 ] ~ s.het.vals, lwd=2, col=COL8[1], lty=2)
+#            lines(lower ~ s.het.vals, lwd=2, col=COL8[1], lty=2)
+            upper  <-  upper.FGM2(F=0.9, s.hom = s.hom.vals)
+            lower  <-  lower.FGM2(F=0.9, s.hom = rev(-s.hom.vals))
+            lines(upper ~ s.hom.vals, lwd=2, col=COL8[1], lty=2)
+            lines(lower ~ rev(-s.hom.vals), lwd=2, col=COL8[1], lty=2)
+            abline(h=0, lwd=1, lty=3)
+            abline(v=0, lwd=1, lty=3)
+           # axes
+            axis(1, las=1)
+            axis(2, labels=NA)
+            # Plot labels etc.
+            proportionalLabel(0.5,  1.05,   expression(paste(italic(F)," = ", 0.9)), cex=2, adj=c(0.5, 0.5), xpd=NA)
+            proportionalLabel( 0.5,  -0.2, expression(paste("Selection on ", italic(aa), " ",(italic(s[hom])))), cex=1.5, adj=c(0.5, 0.5), xpd=NA)        
+    }
+
+
+}
+
+
+
+
+
+#########################
+# Generalized plot of Bivariate distribution of selection coefficients
+# FOR ESTABLISHED MUTATIONS
+# Bivariate plot of selection coefficients for any number of traits
+# arg:  coeffs = "CLASSIC" or "FGM" toggles whether plot shows
+# the classic s1, s2 paramerization of het. adv. or FGM s.het, s.hom
+BivariateSelFig_EstabMuts <-  function(datafile = "./out/BivariateSelFigSims_EstabMuts_Ne1e+05_n50_z1_h0.5_reps10000.csv", coeffs = "CLASSIC", xLim=NA, yLim=NA) {
+    
+    # IMPORT data for plotting
+    dat     <-  read.csv(file=datafile, header=TRUE)
+
+    # back-calculate selection coefficients for classic heterozygote advantage model (s.1 and s.2)
+    dat$s1     <-  -dat$t.wt
+    dat$s2     <-  -dat$t.hom
+
+    # Colors
+    COL8  <-  c("#000000", "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7")
+
+    # set plot layout
+    layout.mat  <-  matrix(c(1:6), nrow=2, ncol=3, byrow=TRUE)
+    layout      <-  layout(layout.mat, respect=TRUE)
+
+    # Generate Plot
+    par(omi=c(1, 1, 0.75, 1), mar = c(5,5,1,1), bty='o', xaxt='s', yaxt='s')
+
+    if(coeffs == "CLASSIC"){
+        
+        # set plot axes limits
+        if(is.na(yLim)[1]){
+                yLim  <-  c(min(dat$s2),max(dat$s2))
+            }
+        if(is.na(xLim)[1]){
+            xLim  <-  c(min(c(dat$s1), -0.01),max(dat$s1))
+        }
+        
+         # Panel (A) F = 0
+        plot(NA, axes=FALSE, type='n', main='', xlim = xLim, ylim = yLim, ylab='', xlab='', cex.lab=1.2)
+            usr  <-  par('usr')
+            rect(usr[1], usr[3], usr[2], usr[4], col='white', border=NA)
+            plotGrid(lineCol='grey80')
+            box()
+            # Plot Points
+            points(dat$s2[dat$F == 0 & dat$BalSel.F == 0] ~ 
+                   s1[F == 0 & BalSel.F == 0], pch=21, col=transparentColor(COL8[2], opacity=0.6), bg=transparentColor(COL8[2], opacity=0.4), data=dat)
+            points(s2[F == 0 & BalSel.F == 1] ~ 
+                   s1[F == 0 & BalSel.F == 1], pch=21, col=transparentColor(COL8[3], opacity=0.6), bg=transparentColor(COL8[3], opacity=0.4), data=dat)
+            lines(x=c(0,1), y=c(0,0), lwd=2, col=COL8[1], lty=2)
+            lines(x=c(0,0), y=c(0,1), lwd=2, col=COL8[1], lty=2)
+            # axes
+            axis(1, labels=NA)
+            axis(2, las=1)
+            # Plot labels etc.
+            proportionalLabel(0.5,  1.1,  expression(paste("Outcrossing")), cex=2, adj=c(0.5, 0.5), xpd=NA)
+            proportionalLabel( -0.2,  0.5, expression(paste("Selection against ", italic(aa), " ",(italic(s[2])))), cex=1.5, adj=c(0.5, 0.5), xpd=NA, srt=90)
+
+    
+         # Panel (B) F = 0.2
+        plot(NA, axes=FALSE, type='n', main='', xlim = xLim, ylim = yLim, ylab='', xlab='', cex.lab=1.2)
+            usr  <-  par('usr')
+            rect(usr[1], usr[3], usr[2], usr[4], col='white', border=NA)
+            plotGrid(lineCol='grey80')
+            box()
+            # Plot Points
+            points(s2[F == 0.2 & BalSel.F == 0] ~ 
+                   s1[F == 0.2 & BalSel.F == 0], pch=21, col=transparentColor(COL8[2], opacity=0.6), bg=transparentColor(COL8[2], opacity=0.4), data=dat)
+            points(s2[F == 0.2 & BalSel.F == 1] ~ 
+                   s1[F == 0.2 & BalSel.F == 1], pch=21, col=transparentColor(COL8[3], opacity=0.6), bg=transparentColor(COL8[3], opacity=0.4), data=dat)
+            # Plot invasion boundaries
+            s2.vals  <-  0:1000/1000
+                upper  <-  upper.classic(F=0.2, s.2 = s2.vals)
+                lower  <-  lower.classic(F=0.2, s.2 = s2.vals)
+                lines(upper[upper < 1 ] ~ s2.vals[upper < 1 ], lwd=2, col=COL8[1], lty=2)
+                lines(lower ~ s2.vals, lwd=2, col=COL8[1], lty=2)
+            # axes
+            axis(1, labels=NA)
+            axis(2, labels=NA)
+            # Plot labels etc.
+            proportionalLabel(0.5,  1.1,  expression(paste(italic(F)," = ", 0.2)), cex=2, adj=c(0.5, 0.5), xpd=NA)
+    
+         # Panel (C) F = 0.4
+        plot(NA, axes=FALSE, type='n', main='', xlim = xLim, ylim = yLim, ylab='', xlab='', cex.lab=1.2)
+            usr  <-  par('usr')
+            rect(usr[1], usr[3], usr[2], usr[4], col='white', border=NA)
+            plotGrid(lineCol='grey80')
+            box()
+            # Plot Points
+            points(s2[F == 0.4 & BalSel.F == 0 ] ~ 
+                   s1[F == 0.4 & BalSel.F == 0 ], pch=21, col=transparentColor(COL8[2], opacity=0.6), bg=transparentColor(COL8[2], opacity=0.4), data=dat)
+            points(s2[F == 0.4 & BalSel.F == 1] ~ 
+                   s1[F == 0.4 & BalSel.F == 1], pch=21, col=transparentColor(COL8[3], opacity=0.6), bg=transparentColor(COL8[3], opacity=0.4), data=dat)
+            # Plot invasion boundaries
+            s2.vals  <-  0:1000/1000
+                upper  <-  upper.classic(F=0.4, s.2 = s2.vals)
+                lower  <-  lower.classic(F=0.4, s.2 = s2.vals)
+                lines(upper[upper < 1 ] ~ s2.vals[upper < 1 ], lwd=2, col=COL8[1], lty=2)
+                lines(lower ~ s2.vals, lwd=2, col=COL8[1], lty=2)
+           # axes
+            axis(1, labels=NA)
+            axis(2, labels=NA)
+            # Plot labels etc.
+            proportionalLabel(0.5,  1.1,  expression(paste(italic(F)," = ", 0.4)), cex=2, adj=c(0.5, 0.5), xpd=NA)
+                # Legend
+            legend(
+                   x       =  usr[2]*0.6,
+                   y       =  usr[4]*1,
+                   legend  =  c(expression(paste("Balancing sel.")),
+                                expression(paste("Directional sel. for ", italic(a)))),
+                   pch     =  21,
+                   pt.bg   =  c(transparentColor(COL8[3], opacity=0.4),
+                                transparentColor(COL8[2], opacity=0.4)),
+                   col     =  c(transparentColor(COL8[3], opacity=0.6),
+                                transparentColor(COL8[2], opacity=0.6)),
+                   cex     =  1.25,
+                   xjust   =  1,
+                   yjust   =  1,
+                   bty     =  'n',
+                   border  =  NA
+                   )
+
+         # Panel (D) F = 0.6
+        plot(NA, axes=FALSE, type='n', main='', xlim = xLim, ylim = yLim, ylab='', xlab='', cex.lab=1.2)
+            usr  <-  par('usr')
+            rect(usr[1], usr[3], usr[2], usr[4], col='white', border=NA)
+            plotGrid(lineCol='grey80')
+            box()
+            # Plot Points
+            points(s2[F == 0.6 & BalSel.F == 0 ] ~ 
+                   s1[F == 0.6 & BalSel.F == 0 ], pch=21, col=transparentColor(COL8[2], opacity=0.6), bg=transparentColor(COL8[2], opacity=0.4), data=dat)
+            points(s2[F == 0.6 & BalSel.F == 1 ] ~ 
+                   s1[F == 0.6 & BalSel.F == 1 ], pch=21, col=transparentColor(COL8[3], opacity=0.6), bg=transparentColor(COL8[3], opacity=0.4), data=dat)
+            # Plot invasion boundaries
+                upper  <-  upper.classic(F=0.6, s.2 = s2.vals)
+                lower  <-  lower.classic(F=0.6, s.2 = s2.vals)
+                lines(upper[upper < 1 ] ~ s2.vals[upper < 1 ], lwd=2, col=COL8[1], lty=2)
+                lines(lower ~ s2.vals, lwd=2, col=COL8[1], lty=2)
+           # axes
+            axis(1, las=1)
+            axis(2, las=1)
+            # Plot labels etc.
+            proportionalLabel(0.5,  1.1,  expression(paste(italic(F)," = ", 0.6)), cex=2, adj=c(0.5, 0.5), xpd=NA)        
+            proportionalLabel( -0.2,  0.5, expression(paste("Selection against ", italic(aa), " ",(italic(s[2])))), cex=1.5, adj=c(0.5, 0.5), xpd=NA, srt=90)
+            proportionalLabel( 0.5,  -0.2, expression(paste("Selection against ", italic(AA), " ",(italic(s[1])))), cex=1.5, adj=c(0.5, 0.5), xpd=NA)        
+    
+         # Panel (E) F = 0.8
+        plot(NA, axes=FALSE, type='n', main='', xlim = xLim, ylim = yLim, ylab='', xlab='', cex.lab=1.2)
+            usr  <-  par('usr')
+            rect(usr[1], usr[3], usr[2], usr[4], col='white', border=NA)
+            plotGrid(lineCol='grey80')
+            box()
+            # Plot Points
+            points(s2[F == 0.8 & BalSel.F == 0] ~ 
+                   s1[F == 0.8 & BalSel.F == 0], pch=21, col=transparentColor(COL8[2], opacity=0.6), bg=transparentColor(COL8[2], opacity=0.4), data=dat)
+            points(s2[F == 0.8 & BalSel.F == 1] ~ 
+                   s1[F == 0.8 & BalSel.F == 1], pch=21, col=transparentColor(COL8[3], opacity=0.6), bg=transparentColor(COL8[3], opacity=0.4), data=dat)
+            # Plot invasion boundaries
+                upper  <-  upper.classic(F=0.8, s.2 = s2.vals)
+                lower  <-  lower.classic(F=0.8, s.2 = s2.vals)
+                lines(upper[upper < 1 ] ~ s2.vals[upper < 1 ], lwd=2, col=COL8[1], lty=2)
+                lines(lower ~ s2.vals, lwd=2, col=COL8[1], lty=2)
+           # axes
+            axis(1, las=1)
+            axis(2, labels=NA)
+            # Plot labels etc.
+            proportionalLabel(0.5,  1.1,  expression(paste(italic(F)," = ", 0.8)), cex=2, adj=c(0.5, 0.5), xpd=NA)
+            proportionalLabel( 0.5,  -0.2, expression(paste("Selection against ", italic(AA), " ",(italic(s[1])))), cex=1.5, adj=c(0.5, 0.5), xpd=NA)        
+    
+         # Panel (F) F = 0.9
+        plot(NA, axes=FALSE, type='n', main='', xlim = xLim, ylim = yLim, ylab='', xlab='', cex.lab=1.2)
+            usr  <-  par('usr')
+            rect(usr[1], usr[3], usr[2], usr[4], col='white', border=NA)
+            plotGrid(lineCol='grey80')
+            box()
+               # Plot Points
+            points(s2[F == 0.9 & BalSel.F == 0] ~ 
+                   s1[F == 0.9 & BalSel.F == 0], pch=21, col=transparentColor(COL8[2], opacity=0.6), bg=transparentColor(COL8[2], opacity=0.4), data=dat)
+            points(s2[F == 0.9 & BalSel.F == 1] ~ 
+                   s1[F == 0.9 & BalSel.F == 1], pch=21, col=transparentColor(COL8[3], opacity=0.6), bg=transparentColor(COL8[3], opacity=0.4), data=dat)
+            # Plot invasion boundaries
+                upper  <-  upper.classic(F=0.9, s.2 = s2.vals)
+                lower  <-  lower.classic(F=0.9, s.2 = s2.vals)
+                lines(upper[upper < 1 ] ~ s2.vals[upper < 1 ], lwd=2, col=COL8[1], lty=2)
+                lines(lower ~ s2.vals, lwd=2, col=COL8[1], lty=2)
+           # axes
+            axis(1, las=1)
+            axis(2, labels=NA)
+            # Plot labels etc.
+            proportionalLabel(0.5,  1.1,  expression(paste(italic(F)," = ", 0.9)), cex=2, adj=c(0.5, 0.5), xpd=NA)
+            proportionalLabel( 0.5,  -0.2, expression(paste("Selection against ", italic(AA), " ",(italic(s[1])))), cex=1.5, adj=c(0.5, 0.5), xpd=NA)        
+    }
+
+    # Using standard FGM s.het, s.hom coefficients
+    if(coeffs == "FGM"){
+
+        # Set axes limits
+        if(is.na(xLim)[1]){
+            xLim  <-  c(min(dat$s.hom),max(dat$s.hom))
+        }
+        if(is.na(yLim)[1]){
+            yLim  <-  c(min(dat$s.het),max(dat$s.het))
+        }
+
+         # Panel (A) F = 0
+        plot(NA, axes=FALSE, type='n', main='', xlim = xLim, ylim = yLim, ylab='', xlab='', cex.lab=1.2)
+            usr  <-  par('usr')
+            rect(usr[1], usr[3], usr[2], usr[4], col='white', border=NA)
+            plotGrid(lineCol='grey80')
+            box()
+            # Plot Points
+            points(s.het[F == 0 & BalSel.F == 0] ~ 
+                   s.hom[F == 0 & BalSel.F == 0], pch=21, col=transparentColor(COL8[2], opacity=0.6), bg=transparentColor(COL8[2], opacity=0.4), data=dat)
+            points(s.het[F == 0 & BalSel.F == 1] ~ 
+                   s.hom[F == 0 & BalSel.F == 1], pch=21, col=transparentColor(COL8[3], opacity=0.6), bg=transparentColor(COL8[3], opacity=0.4), data=dat)
+            # invasion conditions
+            lines(x=c(0,1), y=c(0,1), lwd=2, col=COL8[1], lty=2)
+            lines(x=c(-1,0), y=c(0,0), lwd=2, col=COL8[1], lty=2)
+            abline(h=0, lwd=1, lty=3)
+            abline(v=0, lwd=1, lty=3)
+            # axes
+            axis(1, labels=NA)
+            axis(2, las=1)
+            # Plot labels etc.
+            proportionalLabel(0.5,  1.1,  expression(paste("Outcrossing")), cex=2, adj=c(0.5, 0.5), xpd=NA)
+            proportionalLabel( -0.2,  0.5, expression(paste("Selection on ", italic(Aa), " ",(italic(s[het])))), cex=1.5, adj=c(0.5, 0.5), xpd=NA, srt=90)
+            # Legend
+            legend(
+                   x       =  (usr[1] + 0.65*(usr[2]-usr[1])),
+                   y       =  usr[4],# - 0.15*(usr[4]-usr[3]),
+                   legend  =  c(expression(paste("Directional sel. for ", italic(a))),
+                                expression(paste("Balancing sel."))),
+                   pch     =  21,
+                   pt.bg   =  c(transparentColor(COL8[2], opacity=0.4),
+                                transparentColor(COL8[3], opacity=0.4)),
+                   col     =  c(transparentColor(COL8[2], opacity=0.6),
+                                transparentColor(COL8[3], opacity=0.6)),
+                   cex     =  1.25,
+                   xjust   =  1,
+                   yjust   =  1,
+                   bty     =  'n',
+                   border  =  NA
+                   )
+
+
+         # Panel (B) F = 0.2
+        plot(NA, axes=FALSE, type='n', main='', xlim = xLim, ylim = yLim, ylab='', xlab='', cex.lab=1.2)
+            usr  <-  par('usr')
+            rect(usr[1], usr[3], usr[2], usr[4], col='white', border=NA)
+            plotGrid(lineCol='grey80')
+            box()
+            # Plot Points
+            points(s.het[F == 0.2 & BalSel.F == 0] ~ 
+                   s.hom[F == 0.2 & BalSel.F == 0], pch=21, col=transparentColor(COL8[2], opacity=0.6), bg=transparentColor(COL8[2], opacity=0.4), data=dat)
+            points(s.het[F == 0.2 & BalSel.F == 1] ~ 
+                   s.hom[F == 0.2 & BalSel.F == 1], pch=21, col=transparentColor(COL8[3], opacity=0.6), bg=transparentColor(COL8[3], opacity=0.4), data=dat)
+            # Plot invasion boundaries
+#            s.het.vals  <-  0:1000/1000
+#                upper  <-  upper.FGM(F=0.2, s.het = s.het.vals)
+#                lower  <-  lower.FGM(F=0.2, s.het = s.het.vals)
+#                lines(upper[upper < 1 ] ~ s.het.vals, lwd=2, col=COL8[1], lty=2)
+#                lines(lower ~ s.het.vals, lwd=2, col=COL8[1], lty=2)
+            s.hom.vals  <-  0:1000/1000
+                upper  <-  upper.FGM2(F=0.2, s.hom = s.hom.vals)
+                lower  <-  lower.FGM2(F=0.2, s.hom = rev(-s.hom.vals))
+                lines(upper ~ s.hom.vals, lwd=2, col=COL8[1], lty=2)
+                lines(lower ~ rev(-s.hom.vals), lwd=2, col=COL8[1], lty=2)
+            abline(h=0, lwd=1, lty=3)
+            abline(v=0, lwd=1, lty=3)
+            # axes
+            axis(1, labels=NA)
+            axis(2, labels=NA)
+            # Plot labels etc.
+            proportionalLabel(0.5,  1.1,  expression(paste(italic(F)," = ", 0.2)), cex=2, adj=c(0.5, 0.5), xpd=NA)
+    
+         # Panel (C) F = 0.4
+        plot(NA, axes=FALSE, type='n', main='', xlim = xLim, ylim = yLim, ylab='', xlab='', cex.lab=1.2)
+            usr  <-  par('usr')
+            rect(usr[1], usr[3], usr[2], usr[4], col='white', border=NA)
+            plotGrid(lineCol='grey80')
+            box()
+            # Plot Points
+            points(s.het[F == 0.4 & BalSel.F == 0] ~ 
+                   s.hom[F == 0.4 & BalSel.F == 0], pch=21, col=transparentColor(COL8[2], opacity=0.6), bg=transparentColor(COL8[2], opacity=0.4), data=dat)
+            points(s.het[F == 0.4 & BalSel.F == 1] ~ 
+                   s.hom[F == 0.4 & BalSel.F == 1], pch=21, col=transparentColor(COL8[3], opacity=0.6), bg=transparentColor(COL8[3], opacity=0.4), data=dat)
+            # Plot invasion boundaries
+#            upper  <-  upper.FGM(F=0.4, s.het = s.het.vals)
+#            lower  <-  lower.FGM(F=0.4, s.het = s.het.vals)
+#            lines(upper[upper < 1 ] ~ s.het.vals, lwd=2, col=COL8[1], lty=2)
+#            lines(lower ~ s.het.vals, lwd=2, col=COL8[1], lty=2)
+                upper  <-  upper.FGM2(F=0.4, s.hom = s.hom.vals)
+                lower  <-  lower.FGM2(F=0.4, s.hom = rev(-s.hom.vals))
+                lines(upper ~ s.hom.vals, lwd=2, col=COL8[1], lty=2)
+                lines(lower ~ rev(-s.hom.vals), lwd=2, col=COL8[1], lty=2)
+            abline(h=0, lwd=1, lty=3)
+            abline(v=0, lwd=1, lty=3)
+           # axes
+            axis(1, labels=NA)
+            axis(2, labels=NA)
+            # Plot labels etc.
+            proportionalLabel(0.5,  1.1,  expression(paste(italic(F)," = ", 0.4)), cex=2, adj=c(0.5, 0.5), xpd=NA)
+    
+         # Panel (D) F = 0.6
+        plot(NA, axes=FALSE, type='n', main='', xlim = xLim, ylim = yLim, ylab='', xlab='', cex.lab=1.2)
+            usr  <-  par('usr')
+            rect(usr[1], usr[3], usr[2], usr[4], col='white', border=NA)
+            plotGrid(lineCol='grey80')
+            box()
+            # Plot Points
+            points(s.het[F == 0.6 & BalSel.F == 0] ~ 
+                   s.hom[F == 0.6 & BalSel.F == 0], pch=21, col=transparentColor(COL8[2], opacity=0.6), bg=transparentColor(COL8[2], opacity=0.4), data=dat)
+            points(s.het[F == 0.6 & BalSel.F == 1] ~ 
+                   s.hom[F == 0.6 & BalSel.F == 1], pch=21, col=transparentColor(COL8[3], opacity=0.6), bg=transparentColor(COL8[3], opacity=0.4), data=dat)
+            # Plot invasion boundaries
+#            upper  <-  upper.FGM(F=0.6, s.het = s.het.vals)
+#            lower  <-  lower.FGM(F=0.6, s.het = s.het.vals)
+#            lines(upper[upper < 1 ] ~ s.het.vals, lwd=2, col=COL8[1], lty=2)
+#            lines(lower ~ s.het.vals, lwd=2, col=COL8[1], lty=2)
+                upper  <-  upper.FGM2(F=0.6, s.hom = s.hom.vals)
+                lower  <-  lower.FGM2(F=0.6, s.hom = rev(-s.hom.vals))
+                lines(upper ~ s.hom.vals, lwd=2, col=COL8[1], lty=2)
+                lines(lower ~ rev(-s.hom.vals), lwd=2, col=COL8[1], lty=2)
+            abline(h=0, lwd=1, lty=3)
+            abline(v=0, lwd=1, lty=3)
+           # axes
+            axis(1, las=1)
+            axis(2, las=1)
+            # Plot labels etc.
+            proportionalLabel(0.5,  1.1,  expression(paste(italic(F)," = ", 0.6)), cex=2, adj=c(0.5, 0.5), xpd=NA)        
+            proportionalLabel( -0.2,  0.5, expression(paste("Selection on ", italic(Aa), " ",(italic(s[het])))), cex=1.5, adj=c(0.5, 0.5), xpd=NA, srt=90)
+            proportionalLabel( 0.5,  -0.2, expression(paste("Selection on ", italic(aa), " ",(italic(s[hom])))), cex=1.5, adj=c(0.5, 0.5), xpd=NA)        
+    
+         # Panel (E) F = 0.8
+        plot(NA, axes=FALSE, type='n', main='', xlim = xLim, ylim = yLim, ylab='', xlab='', cex.lab=1.2)
+            usr  <-  par('usr')
+            rect(usr[1], usr[3], usr[2], usr[4], col='white', border=NA)
+            plotGrid(lineCol='grey80')
+            box()
+            # Plot Points
+            points(s.het[F == 0.8 & BalSel.F == 0] ~ 
+                   s.hom[F == 0.8 & BalSel.F == 0], pch=21, col=transparentColor(COL8[2], opacity=0.6), bg=transparentColor(COL8[2], opacity=0.4), data=dat)
+            points(s.het[F == 0.8 & BalSel.F == 1] ~ 
+                   s.hom[F == 0.8 & BalSel.F == 1], pch=21, col=transparentColor(COL8[3], opacity=0.6), bg=transparentColor(COL8[3], opacity=0.4), data=dat)
+            # Plot invasion boundaries
+#            upper  <-  upper.FGM(F=0.8, s.het = s.het.vals)
+#            lower  <-  lower.FGM(F=0.8, s.het = s.het.vals)
+#            lines(upper[upper < 1 ] ~ s.het.vals, lwd=2, col=COL8[1], lty=2)
+#            lines(lower ~ s.het.vals, lwd=2, col=COL8[1], lty=2)
+                upper  <-  upper.FGM2(F=0.8, s.hom = s.hom.vals)
+                lower  <-  lower.FGM2(F=0.8, s.hom = rev(-s.hom.vals))
+                lines(upper ~ s.hom.vals, lwd=2, col=COL8[1], lty=2)
+                lines(lower ~ rev(-s.hom.vals), lwd=2, col=COL8[1], lty=2)
+            abline(h=0, lwd=1, lty=3)
+            abline(v=0, lwd=1, lty=3)
+           # axes
+            axis(1, las=1)
+            axis(2, labels=NA)
+            # Plot labels etc.
+            proportionalLabel(0.5,  1.1,  expression(paste(italic(F)," = ", 0.8)), cex=2, adj=c(0.5, 0.5), xpd=NA)
+            proportionalLabel( 0.5,  -0.2, expression(paste("Selection on ", italic(aa), " ",(italic(s[hom])))), cex=1.5, adj=c(0.5, 0.5), xpd=NA)        
+    
+         # Panel (F) F = 0.9
+        plot(NA, axes=FALSE, type='n', main='', xlim = xLim, ylim = yLim, ylab='', xlab='', cex.lab=1.2)
+            usr  <-  par('usr')
+            rect(usr[1], usr[3], usr[2], usr[4], col='white', border=NA)
+            plotGrid(lineCol='grey80')
+            box()
+               # Plot Points
+            points(s.het[F == 0.9 & BalSel.F == 0] ~ 
+                   s.hom[F == 0.9 & BalSel.F == 0], pch=21, col=transparentColor(COL8[2], opacity=0.6), bg=transparentColor(COL8[2], opacity=0.4), data=dat)
+            points(s.het[F == 0.9 & BalSel.F == 1] ~ 
+                   s.hom[F == 0.9 & BalSel.F == 1], pch=21, col=transparentColor(COL8[3], opacity=0.6), bg=transparentColor(COL8[3], opacity=0.4), data=dat)
+            # Plot invasion boundaries
+#            upper  <-  upper.FGM(F=0.9, s.het = s.het.vals)
+#            lower  <-  lower.FGM(F=0.9, s.het = s.het.vals)
+#            lines(upper[upper < 1 ] ~ s.het.vals, lwd=2, col=COL8[1], lty=2)
+#            lines(lower ~ s.het.vals, lwd=2, col=COL8[1], lty=2)
+                upper  <-  upper.FGM2(F=0.9, s.hom = s.hom.vals)
+                lower  <-  lower.FGM2(F=0.9, s.hom = rev(-s.hom.vals))
+                lines(upper ~ s.hom.vals, lwd=2, col=COL8[1], lty=2)
+                lines(lower ~ rev(-s.hom.vals), lwd=2, col=COL8[1], lty=2)
+            abline(h=0, lwd=1, lty=3)
+            abline(v=0, lwd=1, lty=3)
+           # axes
+            axis(1, las=1)
+            axis(2, labels=NA)
+            # Plot labels etc.
+            proportionalLabel(0.5,  1.1,  expression(paste(italic(F)," = ", 0.9)), cex=2, adj=c(0.5, 0.5), xpd=NA)
+            proportionalLabel( 0.5,  -0.2, expression(paste("Selection on ", italic(aa), " ",(italic(s[hom])))), cex=1.5, adj=c(0.5, 0.5), xpd=NA)        
+    }
+
+
+}
+
+####################
+Enrichment_EstabMutsFig <-  function(xAvg=2) {
+    
+    # IMPORT data for plotting
+    dat       <-  read.csv(file="./out/BivariateSelFigSims_EstabMuts_xAvg5_Ne1e+05_n50_z1_h0.5_reps10000.csv", header=TRUE)
+
+    # Run simulations for new adaptive mutations
+    datNew       <-  BivariateSelFigSims_FavMuts(xAvg=xAvg, n = 50, z = 1, h = 1/2, reps=10^4)
+
+    # back-calculate selection coefficients for classic heterozygote advantage model (s.1 and s.2)
+    dat$s1          <-  -dat$t.wt
+    dat$s2          <-  -dat$t.hom
+    datNew$s1       <-  -datNew$t.wt
+    datNew$s2       <-  -datNew$t.hom
+
+    # Calculate relative enrichment of alleles under balancing and positive selection
+    # in established vs. new adaptive mutations
+    Fs               <-  unique(dat$F)
+    RelBal.est.fav   <-  c()
+    RelPos.est.fav   <-  c()
+    RelBal.fav       <-  c()
+    RelBal.est       <-  c()
+    meanSel.Bal.fav  <-  c()
+    meanSel.Bal.est  <-  c()
+    meanSel.Pos.fav  <-  c()
+    meanSel.Pos.est  <-  c()
+
+    for(i in 1:length(Fs)) {
+        RelBal.est.fav[i]  <-  (sum(dat$BalSel[dat$F==Fs[i]])/sum(dat$F==Fs[i])) / (sum(datNew$BalSel[datNew$F==Fs[i]])/sum(datNew$F==Fs[i]))
+        RelPos.est.fav[i]  <-  (sum(dat$BalSel[dat$F==Fs[i]] == 0) / sum(dat$F==Fs[i])) / (sum(datNew$BalSel[datNew$F==Fs[i]] == 0) / sum(datNew$F==Fs[i]))
+        
+        RelBal.fav[i]  <-  (sum(datNew$BalSel[datNew$F==Fs[i]] == 1)/sum(datNew$F==Fs[i])) / (sum(datNew$BalSel[datNew$F==0])/sum(datNew$F==Fs[1]))
+        RelBal.est[i]  <-  (sum(dat$BalSel[dat$F==Fs[i]] == 1)/sum(dat$F==Fs[i])) / (sum(dat$BalSel[dat$F==0])/sum(dat$F==Fs[1]))
+
+        meanSel.Bal.fav[i]  <-  mean( datNew$s.het[datNew$BalSel == 1 & datNew$F==Fs[i]]*(1-Fs[i]) + datNew$s.hom[datNew$BalSel == 1 & datNew$F==Fs[i]]*Fs[i])
+        meanSel.Pos.fav[i]  <-  mean( datNew$s.het[datNew$BalSel == 0 & datNew$F==Fs[i]]*(1-Fs[i]) + datNew$s.hom[datNew$BalSel == 0 & datNew$F==Fs[i]]*Fs[i])
+        
+        meanSel.Bal.est[i]  <-  mean( dat$s.het[dat$BalSel == 1 & dat$F==Fs[i]]*(1-Fs[i]) + dat$s.hom[dat$BalSel == 1 & dat$F==Fs[i]]*Fs[i])
+        meanSel.Pos.est[i]  <-  mean( dat$s.het[dat$BalSel == 0 & dat$F==Fs[i]]*(1-Fs[i]) + dat$s.hom[dat$BalSel == 0 & dat$F==Fs[i]]*Fs[i])
+
+    }
+
+    # Colors
+    COL8  <-  c("#000000", "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7")
+
+    # set plot layout
+    layout.mat  <-  matrix(1:2, nrow=2, ncol=1, byrow=TRUE)
+    layout      <-  layout(layout.mat, respect=TRUE)
+
+    # Generate Plot
+    par(omi=c(0.75, 0.75, 0.75, 0.75), mar = c(3,3,1,1), bty='o', xaxt='s', yaxt='s')
+
+
+         # Panel (A) Relative enrichment in established vs. new adaptive mutations
+        plot(NA, axes=FALSE, type='n', main='', xlim = c(0,1), ylim = c(0, 1.4), ylab='', xlab='', cex.lab=1.2)
+            usr  <-  par('usr')
+            rect(usr[1], usr[3], usr[2], usr[4], col='white', border=NA)
+            plotGrid(lineCol='grey80')
+            box()
+            # Plot Points
+            points(RelPos.est.fav ~ Fs, pch=21, col=transparentColor(COL8[2], opacity=1), bg=transparentColor(COL8[2], opacity=0.8), data=dat)
+            points(RelBal.est.fav ~ Fs, pch=21, col=transparentColor(COL8[3], opacity=1), bg=transparentColor(COL8[3], opacity=0.8), data=dat)
+            # Benchmark ~ 1
+            abline(h=1, lwd=1, lty=3)
+#            lines((1 - Fs) ~ Fs, lty=2, lwd=1)
+            # axes
+            axis(1, labels=NA)
+            axis(2, las=1)
+            # Plot labels etc.
+#            proportionalLabel(0.5,  1.05,  expression(paste("Outcrossing")), cex=2, adj=c(0.5, 0.5), xpd=NA)
+            proportionalLabel(0.05,  1.075,   expression(paste("A")), cex=1.5, adj=c(0.5, 0.5), xpd=NA)
+            proportionalLabel( -0.25,  0.5, expression(paste("Relative proportion (estab./adapt.)")), cex=1.3, adj=c(0.5, 0.5), xpd=NA, srt=90)
+#            proportionalLabel( 0.5,  -0.25,  expression(paste("Inbreeding coefficient (", italic(F), ")")), cex=1.3, adj=c(0.5, 0.5), xpd=NA)
+            # Legend
+            legend(
+                   x       =  usr[2],
+                   y       =  usr[4],
+                   legend  =  c(expression(paste("Balancing sel.")),
+                                expression(paste("Directional sel."))),
+                   pch     =  21,
+                   pt.bg   =  c(transparentColor(COL8[3], opacity=0.6),
+                                transparentColor(COL8[2], opacity=0.6)),
+                   col     =  c(transparentColor(COL8[3], opacity=0.8),
+                                transparentColor(COL8[2], opacity=0.8)),
+                   cex     =  1,
+                   xjust   =  1,
+                   yjust   =  1,
+                   bty     =  'n',
+                   border  =  NA
+                   )
+
+        # Panel (B) Average strength of selection on established & new adaptive mutations under
+        #           either balancing or positive selection
+         plot(NA, axes=FALSE, type='n', main='', xlim = c(0,1), ylim = c(0, 0.04), ylab='', xlab='', cex.lab=1.2)
+            usr  <-  par('usr')
+            rect(usr[1], usr[3], usr[2], usr[4], col='white', border=NA)
+            plotGrid(lineCol='grey80')
+            box()
+            # Plot Points
+            points(meanSel.Bal.fav ~ Fs, pch=21, col=transparentColor(COL8[3], opacity=1), bg=transparentColor(COL8[3], opacity=0.8), data=dat)
+            points(meanSel.Pos.fav ~ Fs, pch=21, col=transparentColor(COL8[2], opacity=1), bg=transparentColor(COL8[2], opacity=0.8), data=dat)
+
+            points(meanSel.Bal.est ~ Fs, pch=23, col=transparentColor(COL8[3], opacity=1), bg=transparentColor(COL8[3], opacity=0.8), data=dat)
+            points(meanSel.Pos.est ~ Fs, pch=23, col=transparentColor(COL8[2], opacity=1), bg=transparentColor(COL8[2], opacity=0.8), data=dat)
+            # axes
+            axis(1, las=1)
+            axis(2, las=1)
+            proportionalLabel(0.05,  1.075,   expression(paste("B")), cex=1.5, adj=c(0.5, 0.5), xpd=NA)
+            proportionalLabel( -0.25,  0.5, expression(paste("Mean selective advantage")), cex=1.3, adj=c(0.5, 0.5), xpd=NA, srt=90)
+            proportionalLabel( 0.5,  -0.25,  expression(paste("Inbreeding coefficient (", italic(F), ")")), cex=1.3, adj=c(0.5, 0.5), xpd=NA)
+            legend(
+                   x       =  usr[2],
+                   y       =  usr[4],
+                   legend  =  c(expression(paste("Established")),
+                                expression(paste("New adaptive"))),
+                   pch     =  c(23,21),
+                   pt.bg   =  NA,
+                   col     =  1,
+                   cex     =  1,
+                   xjust   =  1,
+                   yjust   =  1,
+                   bty     =  'n',
+                   border  =  NA
+                   )
+
+
+}
+
+
+#########################
+# Marginal distributions of selection coefficients
+# Distribution of dominance
+# arg:  coeffs = "CLASSIC" or "FGM" toggles whether plot shows
+# the classic s1, s2 paramerization of het. adv. or FGM s.het, s.hom
+SelectionAndDominanceFig <-  function(xAvg=2, n = 50, z = 1, h = 1/2, reps = 10^4, estMuts = TRUE, datafile = "./out/BivariateSelFigSims_EstabMuts_xAvg2_Ne1e+05_n50_z1_h0.5_reps10000.csv") {
+
+    # Create data for new mutations
+    if(estMuts) {
+        # IMPORT data for plotting
+        dat <-  read.csv(file=datafile, header=TRUE)
+
+    } else {dat <-  BivariateSelFigSims(xAvg=xAvg, n = n, z = z, h = h, reps = reps)}
+    
+
+    # Colors
+    COL8  <-  c("#000000", "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7")
+
+    # set plot layout
+    layout.mat  <-  matrix(c(1:6), nrow=2, ncol=3, byrow=TRUE)
+    layout      <-  layout(layout.mat,respect=TRUE)
+
+    # Generate Plot
+    par(omi=c(1, 1, 0.75, 1), mar = c(6,5,1,1), bty='o', xaxt='s', yaxt='s')
+
+        # Calculate densities of new mutations under balancing seleciton
+        s.hetdens0     <-  density(dat$s.het[dat$F == 0    & dat$BalSel.F == 1], kernel='gaussian') # dist of s.het when F = 0
+        s.hetdens0.2   <-  density(dat$s.het[dat$F == 0.2  & dat$BalSel.F == 1], kernel='gaussian') # dist of s.het when F = 0.2
+        s.hetdens0.4   <-  density(dat$s.het[dat$F == 0.4  & dat$BalSel.F == 1], kernel='gaussian') # dist of s.het when F = 0.4
+        s.hetdens0.6   <-  density(dat$s.het[dat$F == 0.6  & dat$BalSel.F == 1], kernel='gaussian') # dist of s.het when F = 0.6
+        s.hetdens0.8   <-  density(dat$s.het[dat$F == 0.8  & dat$BalSel.F == 1], kernel='gaussian') # dist of s.het when F = 0.8
+        s.hetdens0.98  <-  density(dat$s.het[dat$F == 0.98 & dat$BalSel.F == 1], kernel='gaussian') # dist of s.het when F = 0.98
+
+        s.homdens0     <-  density(dat$s.hom[dat$F == 0    & dat$BalSel.F == 1], kernel='gaussian') # dist of s.hom when F = 0
+        s.homdens0.2   <-  density(dat$s.hom[dat$F == 0.2  & dat$BalSel.F == 1], kernel='gaussian') # dist of s.hom when F = 0.2
+        s.homdens0.4   <-  density(dat$s.hom[dat$F == 0.4  & dat$BalSel.F == 1], kernel='gaussian') # dist of s.hom when F = 0.4
+        s.homdens0.6   <-  density(dat$s.hom[dat$F == 0.6  & dat$BalSel.F == 1], kernel='gaussian') # dist of s.hom when F = 0.6
+        s.homdens0.8   <-  density(dat$s.hom[dat$F == 0.8  & dat$BalSel.F == 1], kernel='gaussian') # dist of s.hom when F = 0.8
+        s.homdens0.98  <-  density(dat$s.hom[dat$F == 0.98 & dat$BalSel.F == 1], kernel='gaussian') # dist of s.hom when F = 0.98
+
+        # set plot axes limits
+        if(estMuts) {
+            xLim  <-  c(min(c(dat$s.het[dat$BalSel.F == 1]), -0.01),max(dat$s.het[dat$BalSel.F == 1]))    
+        } else{xLim  <-  c(min(dat$s.het[dat$BalSel.F == 1]), max(dat$s.het[dat$BalSel.F == 1]))}
+        yLim  <-  c(0, max(c((s.hetdens0$y/sum(s.hetdens0$y)),(s.hetdens0.2$y/sum(s.hetdens0.2$y)),(s.hetdens0.4$y/sum(s.hetdens0.4$y)),(s.hetdens0.6$y/sum(s.hetdens0.6$y)),(s.hetdens0.8$y/sum(s.hetdens0.8$y)),(s.hetdens0.98$y/sum(s.hetdens0.98$y)))))
+        
+         # Panel (A) s.hom Densities
+        plot(NA, axes=FALSE, type='n', main='', xlim = xLim, ylim = yLim, ylab='', xlab='', cex.lab=1.2)
+            usr  <-  par('usr')
+            rect(usr[1], usr[3], usr[2], usr[4], col='white', border=NA)
+            plotGrid(lineCol='grey80')
+            box()
+            # Plot distribution of s1
+            lines((s.hetdens0$y/sum(s.hetdens0$y)) ~ s.hetdens0$x, lwd=2, col=transparentColor(COL8[1], opacity=0.8))
+            lines((s.hetdens0.2$y/sum(s.hetdens0.2$y)) ~ s.hetdens0.2$x, lwd=2, col=transparentColor(COL8[2], opacity=0.8))
+            lines((s.hetdens0.4$y/sum(s.hetdens0.4$y)) ~ s.hetdens0.4$x, lwd=2, col=transparentColor(COL8[3], opacity=0.8))
+            lines((s.hetdens0.6$y/sum(s.hetdens0.6$y)) ~ s.hetdens0.6$x, lwd=2, col=transparentColor(COL8[4], opacity=0.8))
+            lines((s.hetdens0.8$y/sum(s.hetdens0.8$y)) ~ s.hetdens0.8$x, lwd=2, col=transparentColor(COL8[6], opacity=0.8))
+            # axes
+            axis(1, las=1)
+            axis(2, las=1)
+            # Plot labels etc.
+            proportionalLabel(0.05,  1.05,   expression(paste("A")), cex=1.5, adj=c(0.5, 0.5), xpd=NA)
+            proportionalLabel( -0.25,  0.5, expression(paste("Probability density")), cex=1.5, adj=c(0.5, 0.5), xpd=NA, srt=90)
+#            proportionalLabel( 0.5,  -0.2, expression(paste("Selection on ", italic(Aa), " ",(italic(s[het])))), cex=1.5, adj=c(0.5, 0.5), xpd=NA, srt=0)
+#            proportionalLabel(1.18,  1.175,  expression(paste("Distributions of selection coefficients")), cex=2, adj=c(0.5, 0.5), xpd=NA)
+            # Legend
+            legend(
+                   x       =  usr[2],
+                   y       =  usr[4],
+                   legend  =  c(expression(paste(italic(F)==0)),
+                                expression(paste(italic(F)==0.2)),
+                                expression(paste(italic(F)==0.4)),
+                                expression(paste(italic(F)==0.6)),
+                                expression(paste(italic(F)==0.8))),
+                   lwd     =  2,
+                   col     =  c(transparentColor(COL8[1], opacity=0.9),
+                                transparentColor(COL8[2], opacity=0.9),
+                                transparentColor(COL8[3], opacity=0.9),
+                                transparentColor(COL8[4], opacity=0.9),
+                                transparentColor(COL8[6], opacity=0.9)),
+                   cex     =  1.25,
+                   xjust   =  1,
+                   yjust   =  1,
+                   bty     =  'n',
+                   border  =  NA
+                   )
+        
+         # Panel (B) s.het Densities
+        # set plot axes limits
+        if(estMuts) {
+                    xLim  <-  c(-0.05, max(dat$s.hom[dat$BalSel.F == 1]))
+        } else{xLim  <-       c(-0.15, max(dat$s.hom[dat$BalSel.F == 1]))}
+        yLim  <-  c(0, max(c((s.homdens0$y/sum(s.homdens0$y)),(s.homdens0.2$y/sum(s.homdens0.2$y)),(s.homdens0.4$y/sum(s.homdens0.4$y)),(s.homdens0.6$y/sum(s.homdens0.6$y)),(s.homdens0.8$y/sum(s.homdens0.8$y)),(s.homdens0.98$y/sum(s.homdens0.98$y)))))
+
+        plot(NA, axes=FALSE, type='n', main='', xlim = c(-0.15,0.15), ylim = yLim, ylab='', xlab='', cex.lab=1.2)
+            usr  <-  par('usr')
+            rect(usr[1], usr[3], usr[2], usr[4], col='white', border=NA)
+            plotGrid(lineCol='grey80')
+            box()
+            # Plot distribution of s1
+            lines((s.homdens0$y/sum(s.homdens0$y)) ~ s.homdens0$x, lwd=2, col=transparentColor(COL8[1], opacity=0.8))
+            lines((s.homdens0.2$y/sum(s.homdens0.2$y)) ~ s.homdens0.2$x, lwd=2, col=transparentColor(COL8[2], opacity=0.8))
+            lines((s.homdens0.4$y/sum(s.homdens0.4$y)) ~ s.homdens0.4$x, lwd=2, col=transparentColor(COL8[3], opacity=0.8))
+            lines((s.homdens0.6$y/sum(s.homdens0.6$y)) ~ s.homdens0.6$x, lwd=2, col=transparentColor(COL8[4], opacity=0.8))
+            lines((s.homdens0.8$y/sum(s.homdens0.8$y)) ~ s.homdens0.8$x, lwd=2, col=transparentColor(COL8[6], opacity=0.8))
+            # axes
+            axis(1, las=1)
+            axis(2, las=1)
+            # Plot labels etc.
+            proportionalLabel(0.05,  1.05,   expression(paste("B")), cex=1.5, adj=c(0.5, 0.5), xpd=NA)
+#            proportionalLabel( 0.5,  -0.2, expression(paste("Selection on ", italic(aa), " ",(italic(s[hom])))), cex=1.5, adj=c(0.5, 0.5), xpd=NA, srt=0)
+            proportionalLabel(0.5,  1.175,  expression(paste("Overdominant mutations")), cex=2, adj=c(0.5, 0.5), xpd=NA)
+
+
+    
+         # Panel (C) Distribution of dominance for fitness (h)
+        dat$h   <-  dat$s.hom - 2*dat$s.het
+        hdens0     <-  density(dat$h[dat$F == 0    & dat$BalSel.F == 1], kernel='gaussian') # dist of h when F = 0
+        hdens0.2   <-  density(dat$h[dat$F == 0.2  & dat$BalSel.F == 1], kernel='gaussian') # dist of h when F = 0.2
+        hdens0.4   <-  density(dat$h[dat$F == 0.4  & dat$BalSel.F == 1], kernel='gaussian') # dist of h when F = 0.4
+        hdens0.6   <-  density(dat$h[dat$F == 0.6  & dat$BalSel.F == 1], kernel='gaussian') # dist of h when F = 0.6
+        hdens0.8   <-  density(dat$h[dat$F == 0.8  & dat$BalSel.F == 1], kernel='gaussian') # dist of h when F = 0.8
+
+
+        xLim  <-  c(min(c(dat$h[dat$BalSel.F == 1])), max(dat$h[dat$BalSel.F == 1]))
+        yLim  <-  c(0, max(c((hdens0$y/sum(hdens0$y)),(hdens0.2$y/sum(hdens0.2$y)),(hdens0.4$y/sum(hdens0.4$y)),(hdens0.6$y/sum(hdens0.6$y)),(hdens0.8$y/sum(hdens0.8$y)))))
+
+        plot(NA, axes=FALSE, type='n', main='', xlim = xLim, ylim = yLim, ylab='', xlab='', cex.lab=1.2)
+            usr  <-  par('usr')
+            rect(usr[1], usr[3], usr[2], usr[4], col='white', border=NA)
+            plotGrid(lineCol='grey80')
+            box()
+            # Plot distribution of s1
+            lines((hdens0$y/sum(hdens0$y)) ~ hdens0$x, lwd=2, col=transparentColor(COL8[1], opacity=0.8))
+            lines((hdens0.2$y/sum(hdens0.2$y)) ~ hdens0.2$x, lwd=2, col=transparentColor(COL8[2], opacity=0.8))
+            lines((hdens0.4$y/sum(hdens0.4$y)) ~ hdens0.4$x, lwd=2, col=transparentColor(COL8[3], opacity=0.8))
+            lines((hdens0.6$y/sum(hdens0.6$y)) ~ hdens0.6$x, lwd=2, col=transparentColor(COL8[4], opacity=0.8))
+            lines((hdens0.8$y/sum(hdens0.8$y)) ~ hdens0.8$x, lwd=2, col=transparentColor(COL8[6], opacity=0.8))
+            # axes
+            axis(1, las=1)
+            axis(2, las=1)
+            # Plot labels etc.
+            proportionalLabel(0.05,  1.05,   expression(paste("C")), cex=1.5, adj=c(0.5, 0.5), xpd=NA)
+#            proportionalLabel( 0.5,  -0.2, expression(paste("Fitness dominance (", italic(h), ")")), cex=1.5, adj=c(0.5, 0.5), xpd=NA, srt=0)
+#            proportionalLabel(0.5,  1.175,  expression(paste("Distribution of dominance")), cex=2, adj=c(0.5, 0.5), xpd=NA)
+
+
+    ## Beneficial mutations
+
+        # Calculate densities of new mutations under positive seleciton
+        s.hetdens0     <-  density(dat$s.het[dat$F == 0    & dat$BalSel.F == 0 & dat$s.hom > 0], kernel='gaussian') # dist of s.het when F = 0
+        s.hetdens0.2   <-  density(dat$s.het[dat$F == 0.2  & dat$BalSel.F == 0 & dat$s.hom > 0], kernel='gaussian') # dist of s.het when F = 0.2
+        s.hetdens0.4   <-  density(dat$s.het[dat$F == 0.4  & dat$BalSel.F == 0 & dat$s.hom > 0], kernel='gaussian') # dist of s.het when F = 0.4
+        s.hetdens0.6   <-  density(dat$s.het[dat$F == 0.6  & dat$BalSel.F == 0 & dat$s.hom > 0], kernel='gaussian') # dist of s.het when F = 0.6
+        s.hetdens0.8   <-  density(dat$s.het[dat$F == 0.8  & dat$BalSel.F == 0 & dat$s.hom > 0], kernel='gaussian') # dist of s.het when F = 0.8
+        s.hetdens0.98  <-  density(dat$s.het[dat$F == 0.98 & dat$BalSel.F == 0 & dat$s.hom > 0], kernel='gaussian') # dist of s.het when F = 0.98
+
+        s.homdens0     <-  density(dat$s.hom[dat$F == 0    & dat$BalSel.F == 0 & dat$s.hom > 0], kernel='gaussian') # dist of s.hom when F = 0
+        s.homdens0.2   <-  density(dat$s.hom[dat$F == 0.2  & dat$BalSel.F == 0 & dat$s.hom > 0], kernel='gaussian') # dist of s.hom when F = 0.2
+        s.homdens0.4   <-  density(dat$s.hom[dat$F == 0.4  & dat$BalSel.F == 0 & dat$s.hom > 0], kernel='gaussian') # dist of s.hom when F = 0.4
+        s.homdens0.6   <-  density(dat$s.hom[dat$F == 0.6  & dat$BalSel.F == 0 & dat$s.hom > 0], kernel='gaussian') # dist of s.hom when F = 0.6
+        s.homdens0.8   <-  density(dat$s.hom[dat$F == 0.8  & dat$BalSel.F == 0 & dat$s.hom > 0], kernel='gaussian') # dist of s.hom when F = 0.8
+        s.homdens0.98  <-  density(dat$s.hom[dat$F == 0.98 & dat$BalSel.F == 0 & dat$s.hom > 0], kernel='gaussian') # dist of s.hom when F = 0.98
+
+        xLim  <-  c(min(c(dat$s.het[dat$BalSel.F == 0 & dat$s.hom > 0]), -0.01),max(dat$s.het[dat$BalSel.F == 0 & dat$s.hom > 0]))
+        yLim  <-  c(0, max(c((s.hetdens0$y/sum(s.hetdens0$y)),(s.hetdens0.2$y/sum(s.hetdens0.2$y)),(s.hetdens0.4$y/sum(s.hetdens0.4$y)),(s.hetdens0.6$y/sum(s.hetdens0.6$y)),(s.hetdens0.8$y/sum(s.hetdens0.8$y)),(s.hetdens0.98$y/sum(s.hetdens0.98$y)))))
+
+        # Panel (D) het Densities
+        # set plot axes limits
+        if(estMuts) {
+            xLim  <-  c(min(c(dat$s.het[dat$BalSel.F == 0]), -0.01),max(dat$s.het[dat$BalSel.F == 0]))    
+        } else{xLim  <-  c(min(dat$s.het[dat$BalSel.F == 0 & dat$s.hom > 0]), max(dat$s.het[dat$BalSel.F == 0 & dat$s.hom > 0]))}
+        yLim  <-  c(0, max(c((s.hetdens0$y/sum(s.hetdens0$y)),(s.hetdens0.2$y/sum(s.hetdens0.2$y)),(s.hetdens0.4$y/sum(s.hetdens0.4$y)),(s.hetdens0.6$y/sum(s.hetdens0.6$y)),(s.hetdens0.8$y/sum(s.hetdens0.8$y)),(s.hetdens0.98$y/sum(s.hetdens0.98$y)))))
+
+        plot(NA, axes=FALSE, type='n', main='', xlim = c(0,xLim[2]), ylim = yLim, ylab='', xlab='', cex.lab=1.2)
+            usr  <-  par('usr')
+            rect(usr[1], usr[3], usr[2], usr[4], col='white', border=NA)
+            plotGrid(lineCol='grey80')
+            box()
+            # Plot distribution of s1
+            lines((s.hetdens0$y/sum(s.hetdens0$y)) ~ s.hetdens0$x, lwd=2, col=transparentColor(COL8[1], opacity=0.8))
+            lines((s.hetdens0.2$y/sum(s.hetdens0.2$y)) ~ s.hetdens0.2$x, lwd=2, col=transparentColor(COL8[2], opacity=0.8))
+            lines((s.hetdens0.4$y/sum(s.hetdens0.4$y)) ~ s.hetdens0.4$x, lwd=2, col=transparentColor(COL8[3], opacity=0.8))
+            lines((s.hetdens0.6$y/sum(s.hetdens0.6$y)) ~ s.hetdens0.6$x, lwd=2, col=transparentColor(COL8[4], opacity=0.8))
+            lines((s.hetdens0.8$y/sum(s.hetdens0.8$y)) ~ s.hetdens0.8$x, lwd=2, col=transparentColor(COL8[6], opacity=0.8))
+            # axes
+            axis(1, las=1)
+            axis(2, las=1)
+            # Plot labels etc.
+            proportionalLabel(0.05,  1.05,   expression(paste("D")), cex=1.5, adj=c(0.5, 0.5), xpd=NA)
+            proportionalLabel( -0.25,  0.5, expression(paste("Probability density")), cex=1.5, adj=c(0.5, 0.5), xpd=NA, srt=90)
+            proportionalLabel( 0.5,  -0.2, expression(paste("Selection on ", italic(Aa), " ",(italic(s[het])))), cex=1.5, adj=c(0.5, 0.5), xpd=NA, srt=0)
+
+        
+         # Panel (E) s.hom Densities
+        # set plot axes limits
+        if(estMuts) {
+                    xLim  <-  c(-0.05, max(dat$s.hom[dat$BalSel.F == 0]))
+        } else{xLim  <-       c(-0.15, max(dat$s.hom[dat$BalSel.F == 0 & dat$s.hom > 0]))}
+        yLim  <-  c(0, max(c((s.homdens0$y/sum(s.homdens0$y)),(s.homdens0.2$y/sum(s.homdens0.2$y)),(s.homdens0.4$y/sum(s.homdens0.4$y)),(s.homdens0.6$y/sum(s.homdens0.6$y)),(s.homdens0.8$y/sum(s.homdens0.8$y)),(s.homdens0.98$y/sum(s.homdens0.98$y)))))
+        xLim  <-  c(0,max(dat$s.hom[dat$BalSel.F == 1]))
+        yLim  <-  c(0, max(c((s.homdens0$y/sum(s.homdens0$y)),(s.homdens0.2$y/sum(s.homdens0.2$y)),(s.homdens0.4$y/sum(s.homdens0.4$y)),(s.homdens0.6$y/sum(s.homdens0.6$y)),(s.homdens0.8$y/sum(s.homdens0.8$y)),(s.homdens0.98$y/sum(s.homdens0.98$y)))))
+        plot(NA, axes=FALSE, type='n', main='', xlim = xLim, ylim = yLim, ylab='', xlab='', cex.lab=1.2)
+            usr  <-  par('usr')
+            rect(usr[1], usr[3], usr[2], usr[4], col='white', border=NA)
+            plotGrid(lineCol='grey80')
+            box()
+            # Plot distribution of s1
+            lines((s.homdens0$y/sum(s.homdens0$y)) ~ s.homdens0$x, lwd=2, col=transparentColor(COL8[1], opacity=0.8))
+            lines((s.homdens0.2$y/sum(s.homdens0.2$y)) ~ s.homdens0.2$x, lwd=2, col=transparentColor(COL8[2], opacity=0.8))
+            lines((s.homdens0.4$y/sum(s.homdens0.4$y)) ~ s.homdens0.4$x, lwd=2, col=transparentColor(COL8[3], opacity=0.8))
+            lines((s.homdens0.6$y/sum(s.homdens0.6$y)) ~ s.homdens0.6$x, lwd=2, col=transparentColor(COL8[4], opacity=0.8))
+            lines((s.homdens0.8$y/sum(s.homdens0.8$y)) ~ s.homdens0.8$x, lwd=2, col=transparentColor(COL8[6], opacity=0.8))
+            # axes
+            axis(1, las=1)
+            axis(2, las=1)
+            # Plot labels etc.
+            proportionalLabel(0.05,  1.05,   expression(paste("E")), cex=1.5, adj=c(0.5, 0.5), xpd=NA)
+            proportionalLabel( 0.5,  -0.2, expression(paste("Selection on ", italic(aa), " ",(italic(s[hom])))), cex=1.5, adj=c(0.5, 0.5), xpd=NA, srt=0)
+            proportionalLabel(0.5,  1.175,  expression(paste("Beneficial mutations")), cex=2, adj=c(0.5, 0.5), xpd=NA)
+
+    
+         # Panel (F) Distribution of dominance for fitness (h)
+        hdens0     <-  density(dat$h[dat$F == 0    & dat$BalSel.F == 0], kernel='gaussian') # dist of h when F = 0
+        hdens0.2   <-  density(dat$h[dat$F == 0.2  & dat$BalSel.F == 0], kernel='gaussian') # dist of h when F = 0.2
+        hdens0.4   <-  density(dat$h[dat$F == 0.4  & dat$BalSel.F == 0], kernel='gaussian') # dist of h when F = 0.4
+        hdens0.6   <-  density(dat$h[dat$F == 0.6  & dat$BalSel.F == 0], kernel='gaussian') # dist of h when F = 0.6
+        hdens0.8   <-  density(dat$h[dat$F == 0.8  & dat$BalSel.F == 0], kernel='gaussian') # dist of h when F = 0.8
+
+        xLim  <-  c(min(c(dat$h[dat$BalSel.F == 0 & dat$s.hom > 0])),max(dat$h[dat$BalSel.F == 0 & dat$s.hom > 0]))
+        yLim  <-  c(0, max(c((hdens0$y/sum(hdens0$y)),(hdens0.2$y/sum(hdens0.2$y)),(hdens0.4$y/sum(hdens0.4$y)),(hdens0.6$y/sum(hdens0.6$y)),(hdens0.8$y/sum(hdens0.8$y)))))
+
+        plot(NA, axes=FALSE, type='n', main='', xlim = xLim, ylim = yLim, ylab='', xlab='', cex.lab=1.2)
+            usr  <-  par('usr')
+            rect(usr[1], usr[3], usr[2], usr[4], col='white', border=NA)
+            plotGrid(lineCol='grey80')
+            box()
+            # Plot distribution of s1
+            lines((hdens0$y/sum(hdens0$y)) ~ hdens0$x, lwd=2, col=transparentColor(COL8[1], opacity=0.8))
+            lines((hdens0.2$y/sum(hdens0.2$y)) ~ hdens0.2$x, lwd=2, col=transparentColor(COL8[2], opacity=0.8))
+            lines((hdens0.4$y/sum(hdens0.4$y)) ~ hdens0.4$x, lwd=2, col=transparentColor(COL8[3], opacity=0.8))
+            lines((hdens0.6$y/sum(hdens0.6$y)) ~ hdens0.6$x, lwd=2, col=transparentColor(COL8[4], opacity=0.8))
+            lines((hdens0.8$y/sum(hdens0.8$y)) ~ hdens0.8$x, lwd=2, col=transparentColor(COL8[6], opacity=0.8))
+            # axes
+            axis(1, las=1)
+            axis(2, las=1)
+            # Plot labels etc.
+            proportionalLabel(0.05,  1.05,   expression(paste("F")), cex=1.5, adj=c(0.5, 0.5), xpd=NA)
+            proportionalLabel( 0.5,  -0.2, expression(paste("Fitness dominance (", italic(h), ")")), cex=1.5, adj=c(0.5, 0.5), xpd=NA, srt=0)
+
+
+}
+
+
+
+
+#####################
+
+
 
 
 fBal_low_n_integral  <-  function(rInv, rPos){
@@ -1659,3 +3559,216 @@ Fisher_2D_CompareFig  <-  function(z = 0.05, h = 1/2, reps=5*10^4) {
                border  =  NA
                )
 }
+
+
+
+#####################################
+# Functions for \hat{V}_G supp figs
+
+
+ExpVGHatFig  <-  function(smax=0.1) {
+
+    # Set inbreeding values
+    Fvals = 0:100/100
+
+    # Colors
+    COL8  <- c("#000000", "#E69F00", "#56B4E9", "#009E73", "#0072B2", "#D55E00", "#CC79A7")
+
+    # set plot layout
+    layout.mat  <-  matrix(c(1), nrow=1, ncol=1, byrow=TRUE)
+    layout      <-  layout(layout.mat,respect=TRUE)
+
+    # Generate Plot
+    par(omi=c(0.5, 0.5, 0.5, 0.5), mar = c(4,4,4,2), bty='o', xaxt='s', yaxt='s')
+     # Panel (A) Polymorphic space
+     plot(NA, axes=FALSE, type='n', main='', xlim = c(0,1), ylim = c(0,1), ylab='', xlab='', cex.lab=1.2)
+        usr  <-  par('usr')
+        rect(usr[1], usr[3], usr[2], usr[4], col='white', border=NA)
+        plotGrid(lineCol='grey80')
+        box()
+        # Generate Curves
+        expVG  <-  ExpVGHat(smax=smax, F=Fvals)
+        expVG.out  <-  ExpVGHat(smax=smax, F=0)
+        points(expVG/expVG.out ~ Fvals, type='l', lwd=2, col=COL8[1])
+        #  Calculate E[\hat{V}_G] from simulated selection coefficients
+        F.sim      <-  0:10/10
+        expVG.sim  <- c()
+        for(i in 1:length(F.sim)) {
+            s1vals        <-  runif(min=0, max=smax, n=10^6)
+            s2vals        <-  runif(min=0, max=smax, n=10^6)
+            VGvals        <-  VGHat(s1=s1vals, s2=s2vals, F=F.sim[i])
+            expVG.sim[i]  <-  mean(VGvals)
+        }
+        points((expVG.sim/expVG.sim[1]) ~ F.sim, pch=21, col=COL8[1], bg=transparentColor(COL8[1], opacity=0.6))
+        # axes
+        axis(1, las=1)
+        axis(2, las=1)
+        # Plot labels etc.
+        proportionalLabel(-0.2,  0.5,   expression(paste("Relative genetic variance at equilibrium")), cex=1.3, adj=c(0.5, 0.5), xpd=NA, srt=90)        
+        proportionalLabel( 0.5,  -0.25,  expression(paste("Inbreeding coefficient (", italic(F), ")")), cex=1.3, adj=c(0.5, 0.5), xpd=NA)
+}
+
+
+
+relative_VG <-  function(F) {
+            xterm = 2/(1+F)
+            ( (1 + F)^2 * (3 - 2*F - F^2)/(4*(1 - F)) - (1 + F)^3/(1 - F) * log(x=xterm) ) / (3/4 - log(2))
+        }
+
+
+VGHat.fisher  <-  function(sHet, sHom, F) {
+                pHat  <-  (((sHet - sHom)/(1 + sHet)) - F*(sHet/(1+sHet)))/((1 - F)*(((sHet - sHom)/(1 + sHet)) + (sHet/(1+sHet))))
+                pHat[pHat > 1]  <-  1
+                pHat[pHat < 0]  <-  0
+                qHat  <-  1-pHat
+                pHat*qHat*(sHet - sHom)*(1 - F^2)
+               }
+
+# Relative probability of balancing selection ~ Inbreeding Coefficient (F)
+# Variable mutation size
+# -- Simulations take a while, so output can be written as a .csv file 
+#    to subdirectory './out', or returned as an object by setting
+#    'writeFile' accordingly
+#
+# parameters
+# n = 50   --  no. dimensions
+# z = 1    --  wild-type displacement from optimum
+# h = 0.5  --  dominance
+VG_variable_x_EstabMuts_Sims  <-  function(xBar=0.2, Ne = 1000, n = 50, z = 1, h = 1/2, nMuts=10^2) {
+
+    # Initial wild-type phenotype
+    A.wt = c(-z, rep(0, (n - 1))) 
+    # Phenotypic optimum at 0
+    Opt = rep(0, n) 
+
+    F.I  <-  0:10/10
+    ### Established Mutations ###
+    # Vector for output values
+    fBal.F.est  <-  rep(0, times=length(F.I)) 
+    expectedVG  <-  rep(0, times=length(F.I)) 
+    # loop over inbreeding coefficients
+    for(i in 1:length(F.I)){
+        # Inbreeding Coefficient
+        F = F.I[i]
+
+        # vector for selection coefficients
+        s.het.est  <-  rep(0, times=nMuts)
+        s.hom.est  <-  rep(0, times=nMuts)
+
+        # loop over mutations
+        VGvals  <-  rep(0, times=nMuts)
+        for(j in 1:nMuts) {
+
+            # Mutation size
+            Fisher.x = rexp(n=1, rate=1/xBar)
+            absolute.r = 2*z*Fisher.x/sqrt(n)
+            r  <-  absolute.r
+
+            # random mutations
+            mut   <-  rnorm(n)
+            # het-/homo-zygote phenotypes
+            z.het  <-  sqrt(sum((A.wt + r*h*mut/sqrt(sum(mut^2)) - Opt)^2))
+            z.hom  <-  sqrt(sum((A.wt + r*mut/sqrt(sum(mut^2)) - Opt)^2))
+            # het-/homo-zygote selection coefficients
+            s.het  <-  exp(-0.5*z.het^2)/exp(-0.5*z^2) - 1
+            s.hom  <-  exp(-0.5*z.hom^2)/exp(-0.5*z^2) - 1
+            # is mutation favoured?
+            if(-F*s.hom < (1 - F)*s.het) {
+                # Does mutation establish?
+                mutEstablishes       <-  WF_sim_estab_F(F = F, s.het = s.het, s.hom = s.hom, Ne = Ne)
+                # if mut establishes, record sel. coeffs.
+                if(mutEstablishes == 1) {
+                    VGvals[j]  <-  VGHat.fisher(sHet=s.het, sHom=s.hom, F=F)
+                cat('\r', paste(100*(j/nMuts),'% Complete'))                    
+                }
+            }
+        }
+        expectedVG[i]  <-  mean(VGvals)
+
+    print(paste('F = ', F.I[i]))
+    }
+
+    # Output dataframe
+    res.df  <-  data.frame("F"         =  F.I,
+                           "ExpVG"  =  expectedVG)
+    # return dataframe
+    return(res.df)
+
+}
+
+
+
+
+
+ExpVGHatFisherFig  <-  function() {
+
+    # Import data
+    dat1     <-  read.csv(file="./out/EstabMut_VG_xBar2_Ne1000_n50_z1_h0.5_nMuts1e+07.csv", header=TRUE)    
+    dat2     <-  read.csv(file="./out/EstabMut_VG_xBar10_Ne1000_n50_z1_h0.5_nMuts1e+07.csv", header=TRUE)    
+
+    # Set inbreeding values
+    Fvals = 0:100/100
+
+    # Colors
+    COL8  <- c("#000000", "#E69F00", "#56B4E9", "#009E73", "#0072B2", "#D55E00", "#CC79A7")
+
+    # set plot layout
+    layout.mat  <-  matrix(c(1), nrow=1, ncol=1, byrow=TRUE)
+    layout      <-  layout(layout.mat,respect=TRUE)
+
+    # Generate Plot
+    par(omi=c(0.5, 0.5, 0.5, 0.5), mar = c(4,4,4,2), bty='o', xaxt='s', yaxt='s')
+     # Panel (A) Polymorphic space
+     plot(NA, axes=FALSE, type='n', main='', xlim = c(0,1), ylim = c(0,1), ylab='', xlab='', cex.lab=1.2)
+        usr  <-  par('usr')
+        rect(usr[1], usr[3], usr[2], usr[4], col='white', border=NA)
+        plotGrid(lineCol='grey80')
+        box()
+        # Generate Curves
+        relVG  <-  relative_VG(F=Fvals)
+        points(relVG ~ Fvals, type='l', lwd=2, col=COL8[1])
+        #  Calculate E[\hat{V}_G] from simulated selection coefficients
+        lines((ExpVG/ExpVG[1]) ~ F, lty=3, col=transparentColor(COL8[1], opacity=0.6), data=dat1)
+        points((ExpVG/ExpVG[1]) ~ F, pch=21, col=COL8[1], bg=transparentColor(COL8[1], opacity=0.6), data=dat1)
+        lines((ExpVG/ExpVG[1]) ~ F, lty=3, col=transparentColor(COL8[1], opacity=0.3), data=dat2)
+        points((ExpVG/ExpVG[1]) ~ F, pch=21, col=transparentColor(COL8[1], opacity=0.6), bg=transparentColor(COL8[1], opacity=0.3), data=dat2)
+        # axes
+        axis(1, las=1)
+        axis(2, las=1)
+        # Plot labels etc.
+        proportionalLabel(-0.2,  0.5,   expression(paste("E[", hat(V)[G], "] / E[", hat(V)[G],"; ",F==0, "]")), cex=1.3, adj=c(0.5, 0.5), xpd=NA, srt=90)        
+        proportionalLabel( 0.5,  -0.25,  expression(paste("Inbreeding coefficient (", italic(F), ")")), cex=1.3, adj=c(0.5, 0.5), xpd=NA)
+        # Legend
+        legend(
+               x       =  usr[2]*0.97,
+               y       =  usr[4]*0.99,
+               legend  =  c(expression(paste(bar(italic(x))==2)),
+                            expression(paste(bar(italic(x))==10))),
+               lty     =  c(3,3),
+               lwd     =  2,
+               col     =  c(transparentColor(COL8[1], opacity=0.6),
+                            transparentColor(COL8[1], opacity=0.3)),
+               cex     =  1,
+               xjust   =  1,
+               yjust   =  1,
+               bty     =  'n',
+               border  =  NA
+               )
+        legend(
+               x       =  usr[2]*0.82,
+               y       =  usr[4]*0.99,
+               legend  =  c(" ",
+                            " "),
+               pch     =  21,
+               col     =  c(transparentColor(COL8[1], opacity=0.6),
+                            transparentColor(COL8[1], opacity=0.3)),
+               pt.bg     =  c(transparentColor(COL8[1], opacity=0.6),
+                            transparentColor(COL8[1], opacity=0.3)),
+               cex     =  1,
+               xjust   =  1,
+               yjust   =  1,
+               bty     =  'n',
+               border  =  NA
+               )
+}
+
