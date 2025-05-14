@@ -77,7 +77,10 @@ relBalancingMutSize_Sims  <-  function(n = 50, z = 1, F = 1/2, h = 1/2, reps=10^
 # h = 0.5  --  dominance
 # reps = 10^5  --  number of mutations to simulate
 # largeMut = FALSE -- Should new mutations all be small, or drawn from uniform distribution over x in (0,5)
-relBalancing_F_Sims  <-  function(xAvg = 1, n = 50, z = 1, h = 1/2, reps=10^5, largeMut = FALSE) {
+# variableDom = FALSE -- draw phenotypic dominance values from a beta distribution with E(h^2) = 1/2 (i.e., E[h] = 1/2?
+# b = 5 -- 2nd shape parameter for Beta distribution; assume a = b/3, which forces E[h^2] = 1/4. 
+#			possible values for b = {0.5, 1, 1.5, 5, 50}, which span possible distribution shapes
+relBalancing_F_Sims  <-  function(xAvg = 1, n = 50, z = 1, h = 1/2, reps=10^5, largeMut = FALSE, variableDom = FALSE, b=5) {
 
 	# Initial wild-type phenotype
 	A.wt = c(-z, rep(0, (n - 1))) 
@@ -91,17 +94,25 @@ relBalancing_F_Sims  <-  function(xAvg = 1, n = 50, z = 1, h = 1/2, reps=10^5, l
 	absolute.r = 2*z*Fisher.x/sqrt(n)
 	r  <-  absolute.r
 	# Inbreeding values
-	F.I  <-  1:11/11
+	F.I  <-  1:10/10
 	# Vector for output values
 	rBal      <-  rep(0, times=length(F.I))
 	rBal.fav  <-  rep(0, times=length(F.I)) 
 	# random mutations
 	muts   <-  matrix(data=rnorm(n*reps), nrow=reps, ncol=n)
+	# Variable phenotypic dominance
+	if(variableDom) {
+		a  <- b/3
+		h   <-  sqrt(rbeta(n=reps, shape1=b/3, shape2=b))
+	} 
+	if(!variableDom){
+		h  <-  rep(h, times=reps)
+	}
 	# het-/homo-zygote phenotypes
 	z.het  <-  rep(0, times=reps)
 	z.hom  <-  rep(0, times=reps)	
 	for(j in 1:reps) {
-		z.het[j]      <-  sqrt(sum((A.wt + r[j]*h*muts[j,]/sqrt(sum(muts[j,]^2)) - Opt)^2))
+		z.het[j]      <-  sqrt(sum((A.wt + r[j]*h[j]*muts[j,]/sqrt(sum(muts[j,]^2)) - Opt)^2))
 		z.hom[j]      <-  sqrt(sum((A.wt + r[j]*muts[j,]/sqrt(sum(muts[j,]^2)) - Opt)^2))
 	}
 	# het-/homo-zygote selection coefficients
@@ -194,12 +205,17 @@ WF_sim_estab_F  <-  function(F, s.het, s.hom, Ne) {
 # n = 50   --  no. dimensions
 # z = 1    --  wild-type displacement from optimum
 # h = 0.5  --  dominance
-relBalancingMutSize_EstabMuts_Sims  <-  function(Ne = 1000, n = 50, z = 1, F = 1/2, h = 1/2, reps=10^2, writeFile=FALSE) {
+# variableDom = FALSE -- draw phenotypic dominance values from a beta distribution with E(h^2) = 1/2 (i.e., E[h] = 1/2?
+# b = 5 -- 2nd shape parameter for Beta distribution; assume a = b/3, which forces E[h^2] = 1/4. 
+#			possible values for b = {0.5, 1, 1.5, 5, 50}, which span possible distribution shapes
+relBalancingMutSize_EstabMuts_Sims  <-  function(Ne = 1000, n = 50, z = 1, F = 1/2, h = 1/2, variableDom = FALSE, b=5, reps=10^2, writeFile=FALSE) {
 
 	# Initial wild-type phenotype
 	A.wt = c(-z, rep(0, (n - 1))) 
 	# Phenotypic optimum at 0
 	Opt = rep(0, n) 
+	# shape param. for beta distribution
+	a  <- b/3
 	# Vector of mutation sizes
 	Fisher.x = c(0.05, seq(0.5, 4.5, by = 0.5))
 	absolute.r = 2*z*Fisher.x/sqrt(n)
@@ -219,6 +235,10 @@ relBalancingMutSize_EstabMuts_Sims  <-  function(Ne = 1000, n = 50, z = 1, F = 1
 	    while(estCount < reps) {
 			# random mutations
 			mut    <-  rnorm(n)
+			# Variable phenotypic dominance
+			if(variableDom) {
+				h   <-  sqrt(rbeta(n=1, shape1=b/3, shape2=b))
+			}
 			# het-/homo-zygote phenotypes
 			z.het  <-  sqrt(sum((A.wt + r*h*mut/sqrt(sum(mut^2)) - Opt)^2))
 			z.hom  <-  sqrt(sum((A.wt + r*mut/sqrt(sum(mut^2)) - Opt)^2))
@@ -287,7 +307,7 @@ print(paste('mut. size ', i, "/", length(Fisher.x)))
 
 	# export data as .csv to ./out
 	if(writeFile) {
-			filename <-  paste("./out/relBal_smallMut_EstabMuts", "_Ne", Ne, "_F", F, "_n", n, "_z", z, "_h", h, "_reps", reps, ".csv", sep="")
+			filename <-  paste("./out/relBal_smallMut_EstabMuts", "_Ne", Ne, "_F", F, "_n", n, "_z", z, "_h", h, "_VarDom", variableDom, "_b", b, "_reps", reps, ".csv", sep="")
 			write.csv(res.df, file=filename, row.names = FALSE)
 	} else{
 			# return dataframe
@@ -307,7 +327,10 @@ print(paste('mut. size ', i, "/", length(Fisher.x)))
 # n = 50   --  no. dimensions
 # z = 1    --  wild-type displacement from optimum
 # h = 0.5  --  dominance
-relBalancingSmallx_EstabMuts_F_Sims  <-  function(Ne = 1000, n = 50, z = 1, h = 1/2, reps=10^2, writeFile=FALSE) {
+# variableDom = FALSE -- draw phenotypic dominance values from a beta distribution with E(h^2) = 1/2 (i.e., E[h] = 1/2?
+# b = 5 -- 2nd shape parameter for Beta distribution; assume a = b/3, which forces E[h^2] = 1/4. 
+#			possible values for b = {0.5, 1, 1.5, 5, 50}, which span possible distribution shapes
+relBalancingSmallx_EstabMuts_F_Sims  <-  function(Ne = 1000, n = 50, z = 1, h = 1/2, variableDom = FALSE, b=5, reps=10^2, writeFile=FALSE) {
 
 	# Initial wild-type phenotype
 	A.wt = c(-z, rep(0, (n - 1))) 
@@ -317,6 +340,7 @@ relBalancingSmallx_EstabMuts_F_Sims  <-  function(Ne = 1000, n = 50, z = 1, h = 
 	Fisher.x = 0.05
 	absolute.r = 2*z*Fisher.x/sqrt(n)
 	r  <-  absolute.r
+	a  <- b/3
 	# Inbreeding values
 	F.I  <-  0:10/10
 	# Vector for output values
@@ -334,6 +358,10 @@ relBalancingSmallx_EstabMuts_F_Sims  <-  function(Ne = 1000, n = 50, z = 1, h = 
 	    while(estCount < reps) {
 			# random mutations
 			mut   <-  rnorm(n)
+			# Variable phenotypic dominance
+			if(variableDom) {
+				h   <-  sqrt(rbeta(n=1, shape1=b/3, shape2=b))
+			}
 			# het-/homo-zygote phenotypes
 			z.het  <-  sqrt(sum((A.wt + r*h*mut/sqrt(sum(mut^2)) - Opt)^2))
 			z.hom  <-  sqrt(sum((A.wt + r*mut/sqrt(sum(mut^2)) - Opt)^2))
@@ -368,7 +396,7 @@ print(paste('Inbreeding Coefficient ', i, "/", length(F.I)))
 
 	# export data as .csv to ./out
 	if(writeFile) {
-			filename <-  paste("./out/relBal_smallMut_F_EstabMuts", "_Ne", Ne, "_n", n, "_z", z, "_h", h, "_reps", reps, ".csv", sep="")
+			filename <-  paste("./out/relBal_smallMut_F_EstabMuts", "_Ne", Ne, "_n", n, "_z", z, "_h", h, "_VarDom", variableDom, "_b", b, "_reps", reps, ".csv", sep="")
 			write.csv(res.df, file=filename, row.names = FALSE)
 	} else{
 			# return dataframe
@@ -388,7 +416,10 @@ print(paste('Inbreeding Coefficient ', i, "/", length(F.I)))
 # n = 50   --  no. dimensions
 # z = 1    --  wild-type displacement from optimum
 # h = 0.5  --  dominance
-relBalancingMutSize_variable_x_EstabMuts_Sims  <-  function(xAvg = 2, Ne = 1000, n = 50, z = 1, h = 1/2, sim.reps=10^2, writeFile = FALSE) {
+# variableDom = FALSE -- draw phenotypic dominance values from a beta distribution with E(h^2) = 1/2 (i.e., E[h] = 1/2?
+# b = 5 -- 2nd shape parameter for Beta distribution; assume a = b/3, which forces E[h^2] = 1/4. 
+#			possible values for b = {0.5, 1, 1.5, 5, 50}, which span possible distribution shapes
+relBalancingMutSize_variable_x_EstabMuts_Sims  <-  function(xAvg = 2, Ne = 1000, n = 50, z = 1, h = 1/2, variableDom = FALSE, b=5, sim.reps=10^2, writeFile = FALSE) {
 
 	# reps for new & favoured mutations
 	reps  <-  10^5
@@ -402,6 +433,7 @@ relBalancingMutSize_variable_x_EstabMuts_Sims  <-  function(xAvg = 2, Ne = 1000,
 	Fisher.x = rexp(rate=1/xAvg, n = reps)
 	absolute.r = 2*z*Fisher.x/sqrt(n)
 	r  <-  absolute.r
+	a  <- b/3
 	# Inbreeding values
 	F.I  <-  0:10/10
 
@@ -410,11 +442,19 @@ relBalancingMutSize_variable_x_EstabMuts_Sims  <-  function(xAvg = 2, Ne = 1000,
 	rBal.fav  <-  rep(0, times=length(F.I)) 
 	# random mutations
 	muts   <-  matrix(data=rnorm(n*reps), nrow=reps, ncol=n)
+	# Variable phenotypic dominance
+	if(variableDom) {
+		a  <- b/3
+		h   <-  sqrt(rbeta(n=reps, shape1=b/3, shape2=b))
+	}
+	if(!variableDom){
+		h  <-  rep(h, times=reps)
+	}
 	# het-/homo-zygote phenotypes
 	z.het  <-  rep(0, times=reps)
 	z.hom  <-  rep(0, times=reps)	
 		for(j in 1:reps) {
-			z.het[j]      <-  sqrt(sum((A.wt + r[j]*h*muts[j,]/sqrt(sum(muts[j,]^2)) - Opt)^2))
+			z.het[j]      <-  sqrt(sum((A.wt + r[j]*h[j]*muts[j,]/sqrt(sum(muts[j,]^2)) - Opt)^2))
 			z.hom[j]      <-  sqrt(sum((A.wt + r[j]*muts[j,]/sqrt(sum(muts[j,]^2)) - Opt)^2))
 		}
 	# het-/homo-zygote selection coefficients
@@ -465,9 +505,15 @@ relBalancingMutSize_variable_x_EstabMuts_Sims  <-  function(xAvg = 2, Ne = 1000,
 			Fisher.x = rexp(rate = 1/xAvg, n=1)
 			absolute.r = 2*z*Fisher.x/sqrt(n)
 			r  <-  absolute.r
-
 			# random mutations
 			mut   <-  rnorm(n)
+			# Variable phenotypic dominance
+			if(variableDom) {
+				h   <-  sqrt(rbeta(n=1, shape1=b/3, shape2=b))
+			}
+			if(!variableDom) {
+				h   <-  h[1]
+			}
 			# het-/homo-zygote phenotypes
 			z.het  <-  sqrt(sum((A.wt + r*h*mut/sqrt(sum(mut^2)) - Opt)^2))
 			z.hom  <-  sqrt(sum((A.wt + r*mut/sqrt(sum(mut^2)) - Opt)^2))
@@ -505,7 +551,9 @@ print(paste('Inbreeding Coefficient ', i, "/", length(F.I)))
 	
 	# export data as .csv to ./out
 	if(writeFile) {
-			filename <-  paste("./out/relBal_variable_x_EstabMuts", "_xAvg", xAvg, "_Ne", Ne, "_n", n, "_z", z, "_h", h, "_reps", sim.reps, ".csv", sep="")
+		if(variableDom) {
+			filename <-  paste("./out/relBal_variable_x_EstabMuts", "_xAvg", xAvg, "_Ne", Ne, "_n", n, "_z", z, "_VarDom", variableDom, "_b", b, "_reps", sim.reps, ".csv", sep="")
+		} else{filename <-  paste("./out/relBal_variable_x_EstabMuts", "_xAvg", xAvg, "_Ne", Ne, "_n", n, "_z", z, "_h", h, "_reps", sim.reps, ".csv", sep="")}			
 			write.csv(res.df, file=filename, row.names = FALSE)
 	} else{
 			# return dataframe

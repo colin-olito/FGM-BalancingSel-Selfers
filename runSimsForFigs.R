@@ -48,3 +48,22 @@ BivariateSelFigSims_EstabMuts(xAvg=5, Ne = 10^5, n = 50, z = 1, h = 1/2, sim.rep
 # Generate data for V_G contributed by established mutations
 VG_variable_x_EstabMuts_Sims(xBar=1,Ne = 1000, n = 50, z = 1, h = 1/2, nMuts=10^7, writeFile=TRUE)
 VG_variable_x_EstabMuts_Sims(xBar=5,Ne = 1000, n = 50, z = 1, h = 1/2, nMuts=10^7, writeFile=TRUE)
+
+
+# Generate data for R_estab. with variable phenotypic dominance
+bs  <-  c(0.5, 1, 1.5, 5, 50)
+for(i in 1:length(bs)) {
+	relBalancingMutSize_variable_x_EstabMuts_Sims(xAvg = 5, Ne = 10^5, n = 50, z = 1, h = 1/2, variableDom = TRUE, b=bs[i], sim.reps=10^5, writeFile = TRUE)
+}
+
+relBalancingMutSize_variable_x_EstabMuts_Sims(xAvg = 5, Ne = 10^5, n = 50, z = 1, h = 1/2, variableDom = TRUE, b=100, sim.reps=10^5, writeFile = TRUE)
+
+
+
+# Generate data for R_estab. with variable phenotypic dominance
+ns  <-  c(20, 10, 5, 2)
+for(i in 1:length(ns)) {
+	relBalancingMutSize_variable_x_EstabMuts_Sims(xAvg = 5, Ne = 10^5, n = ns[i], z = 1, h = 1/2, variableDom = FALSE, b=5, sim.reps=10^5, writeFile = TRUE)
+}
+	relBalancingMutSize_variable_x_EstabMuts_Sims(xAvg = 5, Ne = 10^5, n = 2, z = 1, h = 1/2, variableDom = FALSE, b=5, sim.reps=10^5, writeFile = TRUE)
+
