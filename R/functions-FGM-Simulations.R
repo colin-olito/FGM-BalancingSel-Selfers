@@ -150,6 +150,85 @@ relBalancing_F_Sims  <-  function(xAvg = 1, n = 50, z = 1, h = 1/2, reps=10^5, l
 }
 
 
+#  SAME AS ABOVE, BUT USING v ~ Beta instead of v^2 ~ Beta
+# Simulate relative probability of balancing selection (R_bal) ~ Inbreeding Coefficient (F)
+# For either small- or large-mutation limit
+# parameters
+# n = 50   --  no. dimensions
+# z = 1    --  wild-type displacement from optimum
+# v = 0.5  --  dominance (mean of dominance for distribution)
+# reps = 10^5  --  number of mutations to simulate
+# largeMut = FALSE -- Should new mutations all be small, or drawn from uniform distribution over x in (0,5)
+# variableDom = FALSE -- draw phenotypic dominance values from a beta distribution with E(h^2) = 1/2 (i.e., E[h] = 1/2?
+# sumAB -- sum of the two beta distribution shape parameters (determines skewness). Reasonable values include 10, 2
+relBalancing_F_Sims_vBeta  <-  function(xAvg = 1, n = 50, z = 1, v = 1/2, sumAB = 10, reps=10^5, largeMut = FALSE, variableDom = FALSE) {
+	# Initial wild-type phenotype
+	A.wt = c(-z, rep(0, (n - 1))) 
+	# Phenotypic optimum at 0
+	Opt = rep(0, n) 
+	# Mutation size
+	if(largeMut) {
+		Fisher.x = rexp(rate=1/xAvg, n=reps)
+#	} else(Fisher.x = rep(0.05, times=reps))
+	} else(Fisher.x = rexp(rate=1/0.05, n=reps))
+	absolute.r = 2*z*Fisher.x/sqrt(n)
+	r  <-  absolute.r
+	# Inbreeding values
+	F.I  <-  seq(0.05, 0.95, length=10)
+	# Vector for output values
+	rBal      <-  rep(0, times=length(F.I))
+	rBal.fav  <-  rep(0, times=length(F.I)) 
+	# random mutations
+	muts   <-  matrix(data=rnorm(n*reps), nrow=reps, ncol=n)
+	# Variable phenotypic dominance
+	if(variableDom) {
+    a  <-  v*sumAB
+    b  <-  sumAB - a
+		v   <-  rbeta(n=reps, shape1 = a, shape2 = b)
+	} 
+	if(!variableDom){
+		v  <-  rep(v, times=reps)
+	}
+	# het-/homo-zygote phenotypes
+	z.het  <-  rep(0, times=reps)
+	z.hom  <-  rep(0, times=reps)
+	for(j in 1:reps) {
+		z.het[j]      <-  sqrt(sum((A.wt + r[j]*v[j]*muts[j,]/sqrt(sum(muts[j,]^2)) - Opt)^2))
+		z.hom[j]      <-  sqrt(sum((A.wt + r[j]*muts[j,]/sqrt(sum(muts[j,]^2)) - Opt)^2))
+	}
+	# het-/homo-zygote selection coefficients
+	s.het  <-  exp(-0.5*z.het^2)/exp(-0.5*z^2) - 1
+	s.hom  <-  exp(-0.5*z.hom^2)/exp(-0.5*z^2) - 1
+	# Do selection coefficients result in balancing selection?
+	# outcrossing
+	out.cond1  <-  as.numeric(s.hom < s.het)
+	out.cond2  <-  as.numeric(s.het > 0)
+	PrBal      <-  sum((out.cond1 + out.cond2) == 2) / reps
+	# among favored mutations
+	PrInv      <-  sum(out.cond2 == 1) / reps
+	fBal.fav   <-  PrBal / PrInv 
+	for(i in 1:length(F.I)){
+		# Inbreeding Coefficient
+		F = F.I[i]
+	    # inbreeding
+	    cond1    <-  as.numeric(-F*s.hom < (1 - F)*s.het)
+	    cond2    <-  as.numeric((1 - F)*s.het > s.hom)
+		PrBal.F    <-  sum((cond1 + cond2) == 2) / reps
+		# Relative probability of balancing selection
+		rBal[i]  <-  PrBal.F/PrBal
+		# among favoured mutations
+		PrInv.F     <-  sum(cond1 == 1) / reps
+		fBal.F.fav  <-  PrBal.F / PrInv.F 
+		# Relative probability of balancing selection among favoured mutations
+		rBal.fav[i]  <-  fBal.F.fav/fBal.fav
+	}
+	# Output dataframe
+	res.df  <-  data.frame("F" =  F.I,
+						             "rBal"      =  rBal,
+						             "rBal.fav"  =  rBal.fav)
+	# return results
+	return(res.df)
+}
 
 
 ###############################################
@@ -162,12 +241,9 @@ pThreshold  <-  function(Ne, s, prFix) {
 	p  <-  prFix*100
 	log((100*exp(2*Ne*s))/(p + exp(2*Ne*s)))/(2*Ne*s) 
 }
-
+# Equilibrium frequency
 qHatBal.F  <-  function(F, s.het, s.hom) {
-	s_1   <-  s.het
-	s_2   <-  s.het - s.hom
-	qHat  <-  (s_1 - F*s_2) / ((1 - F)*(s_1 + s_2))
-	min(qHat, 1)
+  (s.het - F*(s.het - s.hom))/((1 - F)*(2*s.het - s.hom))
 }
 
 # Deterministic recursion
@@ -175,6 +251,7 @@ qPrime  <-  function(q, F, s.het, s.hom) {
 	p  <-  1-q
 	(q*(q*(1-F)+F)*(1 + s.hom) + p*q*(1-F)*(1 + s.het)) / (p*(p*(1-F) + F) + 2*p*q*(1-F)*(1 + s.het) + q*(q*(1-F) + F)*(1 + s.hom) )
 }
+
 # Wright-Fisher Simulation for mutation establisment
 WF_sim_estab_F  <-  function(F, s.het, s.hom, Ne) {
 	# calc N
@@ -184,15 +261,15 @@ WF_sim_estab_F  <-  function(F, s.het, s.hom, Ne) {
 	# BalSel Equil.
 	qHat  <-  qHatBal.F(F=F, s.het=s.het, s.hom=s.hom)
 	# Forward simulation until loss or establishment criteria is met
-	while(q > 0 && q < qHat) {
+	while(q*(1-q) > 0 && q < qHat) {
 		p           <-  1 - q
-		w.avg       <-  p*(p*(1-F) + F) + 2*p*q*(1-F)*(1 + s.het) + q*(q*(1-F) + F)*(1 + s.hom)
-		P.ij.det    <-  c(p*(p*(1-F) + F) , 2*p*q*(1-F)*(1 + s.het), q*(q*(1-F) + F)*(1 + s.hom)) / w.avg
-		P.ij.drift  <-  rmultinom(1, round(N), P.ij.det)/round(N)
+		w.avg       <-    p*(p*(1-F) + F) + 2*p*q*(1-F)*(1 + s.het) + q*(q*(1-F) + F)*(1 + s.hom)
+		P.ij.det    <-  c(p*(p*(1-F) + F) , 2*p*q*(1-F)*(1 + s.het) , q*(q*(1-F) + F)*(1 + s.hom)) / w.avg
+		P.ij.drift  <-  rmultinom(1, N, P.ij.det)/N
 		q           <-  P.ij.drift[3] + P.ij.drift[2]/2
 	}
 	# Did mutation establish?
-	q > 0
+	sign(q) > 0
 }
 
 
@@ -424,7 +501,7 @@ relBalancingMutSize_variable_x_EstabMuts_Sims  <-  function(xAvg = 2, Ne = 1000,
 	# reps for new & favoured mutations
 	reps  <-  10^5
 	# Initial wild-type phenotype
-	A.wt = c(-z, rep(0, (n - 1))) 
+	A.wt = c(z, rep(0, (n - 1))) 
 	# Phenotypic optimum at 0
 	Opt = rep(0, n) 
 
@@ -561,6 +638,228 @@ print(paste('Inbreeding Coefficient ', i, "/", length(F.I)))
 	}
 
 }
+
+
+
+# >> CONTINUE EDITING THIS FUNCTION!!! >>
+# x.dist is a list with the following args:
+# x.dist <- list(dist="chi", m = 0.1) 
+#   - using a value of m = 0.01 results in xAvg = 0.25
+#   - using a value of m = 0.1  results in xAvg = 2.5
+# x.dist <- list(dist="exp", xAvg = 5) 
+#   - be sure to use corresponding values of xAvg for desired m values
+R_bal_xDist_vBeta_Sims  <-  function(x.dist = list(dist = "exp", xAvg = 5),  Ne = 1000, n = 50, z = 1, vAvg = 1/2, variableDom = TRUE, sumAB = 10, estab.reps=10^2, writeFile = FALSE) {
+
+	# reps for new & favoured mutations
+	reps  <-  10^6
+	# fitness surface
+  O  <-  rep(0, n) #optimum
+  A  <-  c(z, rep(0, (n-1))) #wild-type Initial wild-type phenotype
+  # Dominance Parameters
+  a  <-  vAvg*sumAB
+  b  <-  sumAB - a
+  v  <-  vAvg
+
+  # Inbreeding values
+	F.series  <-  c(0, seq(0.05, 0.95, 0.1))
+  # Vectors for output values 
+  Pr.bal.new    <-  vector() # proportion of new mutations that are balanced
+  Pr.bal.adapt  <-  vector() # proportion of adaptive mutations that are balanced
+  Pr.bal.estab  <-  vector() # proportion of estabished mutations that are balanced
+
+  ### New Mutations ###
+#%%
+
+  # loop over F. values
+  for (i in 1:length(F.series)) {
+    f <- F.series[i] # inbreeding coefficient
+    determ.q <- vector() # vector of q.eq for each mutation
+    s.het    <- rep(0, times = reps)
+    s.hom    <- rep(0, times = reps)
+  
+    for (j in 1:reps) {
+      # if exponential
+      if(x.dist$dist == "exp") {
+        xAvg = x.dist$xAvg
+        Fisher.x = rexp(n=1, rate=1/xAvg)
+      }
+      # if chi distributed
+      if(x.dist$dist == "chi") {
+        m = x.dist$m
+        Fisher.x    =  m*sqrt(n)/(2*z)*sqrt(rchisq(n = 1, df = n))
+      }
+      # Variable phenotypic dominance
+      if(variableDom) {
+		    v   <-  rbeta(n=1, shape1 = a, shape2 = b)
+	    }
+      if(!variableDom) {
+        v  <-  vAvg
+      }
+      # random mutation
+      r <- 2 * z * Fisher.x / sqrt(n) # raw mutation size
+      y <- rnorm(n) # n IID draws from a standard normal distribution
+      M <- r * y / sqrt(sum(y^2)) # random mutation of size r
+      
+      A.het <- A + v * M # phenotype of mutant heterozygotes
+      A.hom <- A + M # phenotype of mutant homozygotes
+      z.het <- sqrt(sum((A.het - O)^2)) # distance of the heterozygote
+      z.hom <- sqrt(sum((A.hom - O)^2)) # distance of the homozygote
+      s.het <- exp(0.5 * z^2 - 0.5 * z.het^2) - 1
+      s.hom <- exp(0.5 * z^2 - 0.5 * z.hom^2) - 1
+      # is mutation adaptive?
+      if (s.het * (1 - f) + s.hom * f > 0) {
+        q.eq <- (s.het - f * (s.het - s.hom)) / ((1 - f) * (2 * s.het - s.hom))
+  
+        if (q.eq < 0 | q.eq > 1) {
+          q.eq <- 1
+        }
+      } else {
+        q.eq <- 0
+      }
+      determ.q[j] <- min(q.eq, 1)
+    cat('\r', paste('New Mutations: F = ', F.series[i], ": ", 100*(j/reps),'% Complete'))
+    }
+    Pr.bal.new[i] <- sum((determ.q  > 0 & determ.q < 1)) / reps
+  }
+
+#%%
+
+  ### Adaptive Mutations ###
+
+  # Loop over F.values
+  for(i in 1:length(F.series)){
+		f = F.series[i]
+	  determ.q  <-  vector()
+    adapt.count  <-  0
+    
+    while(adapt.count < reps){
+      # if exponential
+      if(x.dist$dist == "exp") {
+        Fisher.x = rexp(n = 1, rate=1/x.dist$xAvg)
+      }
+      # if chi distributed
+      if(x.dist$dist == "chi") {
+        Fisher.x = x.dist$m * sqrt(n)/(2*z)*sqrt(rchisq(n = 1, df = n))
+      }
+      # Variable phenotypic dominance
+      if(variableDom) {
+		    v   <-  rbeta(n=1, shape1 = a, shape2 = b)
+	    }
+      if(!variableDom) {
+        v  <-  vAvg
+      }
+      # Mutation size
+      r     <- 2*z*Fisher.x/sqrt(n) #raw mutation size
+      y     <- rnorm(n) #n IID draws from a standard normal distribution
+      M     <- r*y/sqrt(sum(y^2)) #random mutation of size r
+      
+      A.het <- A + v*M #phenotype of mutant heterozygotes
+      A.hom <- A + M #phenotype of mutant homozygotes
+      z.het <- sqrt(sum((A.het - O)^2)) #distance of the heterozygote
+      z.hom <- sqrt(sum((A.hom - O)^2)) #distance of the homozygote
+      s.het <- exp(0.5*z^2-0.5*z.het^2) - 1
+      s.hom <- exp(0.5*z^2-0.5*z.hom^2) - 1
+      # is mutation adaptive?
+      if(s.het*(1 - f) + s.hom*f > 0){
+        q.eq <- (s.het - f*(s.het - s.hom))/((1 - f)*(2*s.het - s.hom))
+
+        if(q.eq < 0 | q.eq > 1){
+          q.eq = 1
+        }
+        adapt.count = adapt.count + 1
+        determ.q[adapt.count] = min(q.eq, 1)
+      }
+     cat('\r', paste('Adaptive Mutations: F = ', F.series[i], ": ", 100*(adapt.count/reps),'% Complete'))
+     }
+  Pr.bal.adapt[i]  <-  sum((determ.q > 0 & determ.q < 1)) / reps
+  }
+
+
+#%%
+
+	### Established Mutations ###
+
+  # loop over inbreeding coefficients
+	for(i in 1:length(F.series)){
+    f = F.series[i]
+    determ.q = vector()
+    estab.count = 0
+  
+    while(estab.count < estab.reps){
+      # Mutation size
+      if(x.dist$dist == "exp") {
+        Fisher.x = rexp(n = 1, rate=1/x.dist$xAvg)
+      }
+      if(x.dist$dist == "chi") {
+        Fisher.x = x.dist$m*sqrt(n)/(2*z)*sqrt(rchisq(n = 1, df = n))
+      }
+       # Variable phenotypic dominance
+      if(variableDom) {
+		    v   <-  rbeta(n=1, shape1 = a, shape2 = b)
+	    }
+      if(!variableDom) {
+        v  <-  vAvg
+      }
+       # Mutation size
+      r     <- 2*z*Fisher.x/sqrt(n) #raw mutation size
+      y     <- rnorm(n) #n IID draws from a standard normal distribution
+      M     <- r*y/sqrt(sum(y^2)) #random mutation of size r
+      
+      A.het <- A + v*M #phenotype of mutant heterozygotes
+      A.hom <- A + M #phenotype of mutant homozygotes
+      z.het <- sqrt(sum((A.het - O)^2)) #distance of the heterozygote
+      z.hom <- sqrt(sum((A.hom - O)^2)) #distance of the homozygote
+      s.het <- exp(0.5*z^2-0.5*z.het^2) - 1
+      s.hom <- exp(0.5*z^2-0.5*z.hom^2) - 1
+      # is mutation adaptive?
+      if(s.het*(1 - f) + s.hom*f > 0){
+        q.eq <- (s.het - f*(s.het - s.hom))/((1 - f)*(2*s.het - s.hom))
+
+        if(q.eq < 0 | q.eq > 1){
+          q.eq = 1
+        }
+        # Does mutation establish?
+        N = round(Ne*(1 + f))
+        q = 1/(2*N)
+        while(q > 0 & q < min(q.eq, 1)){
+          freq.zygotes = c((1 - q)^2*(1 - f) + (1 - q)*f, 2*q*(1 - q)*(1 - f), q^2*(1 - f) + q*f)
+          w.ij = c(1, 1 + s.het, 1 + s.hom)
+          w.avg = sum(freq.zygotes*w.ij)
+          freq.adults = freq.zygotes*w.ij/w.avg
+          freq.drift = rmultinom(1, N, freq.adults)/N
+          q = freq.drift[3] + freq.drift[2]/2 
+        }
+        estab.count <- estab.count + sign(q)
+        if(sign(q) > 0){
+          determ.q[estab.count] = min(q.eq, 1)
+        }
+      } 
+      cat('\r', paste('Established Mutations: F = ', F.series[i], ": ", 100*(estab.count/estab.reps),'% Complete'))
+    }
+    Pr.bal.estab[i] = sum((determ.q > 0 & determ.q < 1))/estab.reps
+  }
+
+  #%%
+
+  # Relative probability of balancing selection
+  R.new    <-  Pr.bal.new/Pr.bal.new[1]
+  R.adapt  <-  Pr.bal.adapt/Pr.bal.adapt[1]
+  R.estab  <-  Pr.bal.estab/Pr.bal.estab[1]
+
+	# Output dataframe
+	res.df  <-  data.frame("F"       =  F.series,
+					               "R.new"   =  R.new,
+                         "R.adapt" =  R.adapt,
+                         "R.est"   =  R.estab)
+	
+	# export data as .csv to ./out
+	if(writeFile) {
+		filename <-  paste("./out/RbalSims_xDist_", x.dist$dist, "_", x.dist[[2]], "_vBeta", variableDom, "_vAvg", vAvg, "_sumAB", sumAB, "_Ne", Ne, "_n", n, "_z", z, "_reps", estab.reps, ".csv", sep="")
+	  write.csv(res.df, file=filename, row.names = FALSE)
+	} else{ return(res.df)}
+}
+
+#%%
 
 
 #################################################

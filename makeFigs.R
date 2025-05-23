@@ -11,14 +11,17 @@
 #' 		  or interactively in R. This should create all the
 #' 		  figures for the article
 #'
-%%
+
+#%%
 rm(list = ls())
 ###############
 # DEPENDENCIES
 ###############
 source("./R/functions-figures.R")
 source("./R/functions-FGM-Simulations.R")
-%%
+
+#%%
+
 ######################################
 #' Create figures directories if they
 #' do not already exist
@@ -408,12 +411,45 @@ embed_fonts(figPath(name = "Enrichment_Estab_FavMuts_Fig_xAvg5_z1_h0.5_Estab.pdf
 
 
 
+# Variable dominance using v^2 ~ Beta(a,b)
 
 # Variable phenotypic dominance
 toPdf(RelBalancing_VariableDom_Fig(),
   figPath(name = "RelBalancing_VariableDom_Fig.pdf"),
   width = 12, height = 8
 )
+
+# Variable dominance using v ~ Beta(a,)
+# Less strongly skewed Beta distributions of v
+toPdf(RelBalancing_BetaDom_Fig(sumAB = 10),
+  figPath(name = "RelBalancing_BetaDom_Fig.pdf"),
+  width = 11, height = 12
+)
+
+# More strongly skewed Beta distributions of v
+toPdf(RelBalancing_BetaDom_Fig(sumAB = 2, hymax = 5),
+  figPath(name = "RelBalancing_BetaDom_Fig_Skewed.pdf"),
+  width = 11, height = 12
+)
+
+
+
+#%%
+rm(list = ls())
+source("./R/functions-figures.R")
+source("./R/functions-FGM-Simulations.R")
+RelBalancing_xDist_Fig(histmax = 3.5)
+
+#%%
+# Comparing exp vs. chi distributions of x 
+# Less strongly skewed Beta distributions of v
+toPdf(RelBalancing_xDist_Fig(hymax = 3.5),
+  figPath(name = "RelBalancing_xDist_Fig.pdf"),
+  width = 11, height = 12
+)
+
+#%%
+
 
 
 # Comparison of lower-dimension simulations against high-n appproximations
