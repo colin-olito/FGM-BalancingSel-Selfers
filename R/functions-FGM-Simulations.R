@@ -651,7 +651,7 @@ print(paste('Inbreeding Coefficient ', i, "/", length(F.I)))
 R_bal_xDist_vBeta_Sims  <-  function(x.dist = list(dist = "exp", xAvg = 5),  Ne = 1000, n = 50, z = 1, vAvg = 1/2, variableDom = TRUE, sumAB = 10, estab.reps=10^2, writeFile = FALSE) {
 
 	# reps for new & favoured mutations
-	reps  <-  10^6
+	reps  <-  10^5
 	# fitness surface
   O  <-  rep(0, n) #optimum
   A  <-  c(z, rep(0, (n-1))) #wild-type Initial wild-type phenotype

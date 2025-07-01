@@ -2440,7 +2440,269 @@ RelBalancing_xDist_Fig  <-  function() {
 #%%
 } 
 
+# %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+ #####################################
+# New Main Fig comparing exponential & chi distribution of mutational effect sizes
+ #%%
 
+# Ratio of inbred/outcross balancing selection
+RelBalancing_large_xDist_Fig  <-  function(low_n = NA) {
+
+  # Colors
+  COL8  <- c("#000000", "#E69F00", "#56B4E9", "#009E73", "#0072B2", "#D55E00", "#CC79A7")
+
+  # set plot layout
+  layout.mat  <-  matrix(c(1:4), nrow=2, ncol=2, byrow=TRUE)
+  layout      <-  layout(layout.mat,respect=TRUE)
+
+  # Vector of inbreeding values
+  F.values = 0:100/100
+
+  # Import data from simulations
+  Exp_lgEffectData  <-  read.csv('./out/RbalSims_xDist_exp_2.5_vBetaTRUE_vAvg0.5_sumAB10_Ne1e+05_n50_z1_reps10000.csv')
+  Chi_lgEffectData  <-  read.csv('./out/RbalSims_xDist_chi_0.1_vBetaTRUE_vAvg0.5_sumAB10_Ne1e+05_n50_z1_reps10000.csv')
+  Exp_lgEffectData <- Exp_lgEffectData[-1,]
+  Chi_lgEffectData <- Chi_lgEffectData[-1,]
+    v=1/2
+    z=1
+    n=50
+  # If including low-n data, import and set params
+  add_low_n  <-  !is.na(low_n)
+  if(add_low_n){
+    m_seq  <- c(4.415, 2.81, 1.8)
+    m_n   <-  m_seq[low_n]
+    low_n_filename  <-  paste('./out/RbalSims_xDist_chi_', m_n, '_vBetaFALSE_vAvg0.5_sumAB10_Ne1e+05_n',low_n,'_z1_reps10000.csv', sep='')
+    Chi_lgEffectData_low_n  <-  read.csv(low_n_filename)
+    Chi_lgEffectData_low_n <- Chi_lgEffectData_low_n[-1,]
+  }
+ 
+  # Generate Plot
+#%%
+  par(omi=c(0.5, 0.5, 0.5, 0.5), mar = c(5,4,4,4), bty='o', xaxt='s', yaxt='s')
+
+   # Panel (A) -- Histogram of x, x.avg = 2.5
+   plot(NA, axes=FALSE, type='n', main='',xlim = c(0,4), ylim = c(0, 2), ylab='', xlab='', cex.lab=1.2)
+   usr  <-  par('usr')
+   rect(usr[1], usr[3], usr[2], usr[4], col='white', border=NA)
+   plotGrid(lineCol='grey80')
+   box()
+   # Histogram with Distribution kernel
+   m    <-  0.1
+   n    <-  50
+   z    <-  1
+   xAvg  <-  2.5
+   Fisher.x.chi = m*sqrt(n)/(2*z)*sqrt(rchisq(n = 10^5, df = n))
+   Fisher.x.exp = rexp(rate=1/xAvg, n = 10^5)
+   hist(Fisher.x.exp, breaks=150, freq = FALSE, add=TRUE)
+   hist(Fisher.x.chi, breaks=40, freq = FALSE, add=TRUE)
+  if(add_low_n){
+    Fisher.x.chi_low_n = m_n*sqrt(2)/(2*z)*sqrt(rchisq(n = 10^5, df = low_n)) 
+    hist(Fisher.x.chi_low_n, col=transparentColor(COL8[2], opacity=0.5), breaks=80, freq = FALSE, add=TRUE) 
+  }
+  xBar  <- m*sqrt(n)/(2*z)*sqrt(2)*gamma((n + 1)/2)/gamma(n/2)
+   segments(x0 = xBar, y0 = 0, x1 = xBar, y1 = 1.85, lty=2, lwd=2, col=2)
+   points(xBar,1.85, pch=16, col=transparentColor('tomato', opacity=1), cex=2)
+   points(xBar,1.85, pch=16, col=transparentColor('grey80', opacity=1), cex=1)
+  # axes
+   axis(1, las=1)
+   axis(2, las=1)
+   # Plot labels etc.
+   proportionalLabel(0.05,  1.075, expression(paste("A")), cex=1.5, adj=c(0.5, 0.5), xpd=NA)
+   proportionalLabel(0.5,  1.1,    expression(paste("Mutation size", sep="")), cex=2, adj=c(0.5, 0.5), xpd=NA) 
+   proportionalLabel(-0.25,  0.5,  expression(paste("Probability Density", sep='')), cex=1.5, adj=c(0.5, 0.5), xpd=NA, srt=90)
+   proportionalLabel( 0.5,  -0.25, expression(paste("Scaled (", italic(x), ")")), cex=1.5, adj=c(0.5, 0.5), xpd=NA) 
+   proportionalLabel(0.75,  0.9, expression(paste(bar(italic(x))==2.5)), cex=1.25, adj=c(0.5, 0.5), xpd=NA)   
+   
+#%%
+
+  # Panel (B) -- R_new
+   plot(NA, axes=FALSE, type='n', main='',xlim = c(0,1), ylim = c(0,1), ylab='', xlab='', cex.lab=1.2)
+   usr  <-  par('usr')
+   rect(usr[1], usr[3], usr[2], usr[4], col='white', border=NA)
+   plotGrid(lineCol='grey80')
+   box()
+   # Approximations
+   lines(1 - F.values ~ F.values, lwd = 2, col=COL8[1])
+   lines(R.new.largeMut(F = F.values, h = 1/2) ~ F.values, lty=1, lwd=2, col=transparentColor(COL8[1], opacity=0.5)) 
+   # Numerical results
+   Ratio.new.chisq <- vector()
+    m <- 0.1
+      for(i in 1:length(F.values)){
+       f = F.values[i]
+       Pr.bal.new.chisq = function(y){
+          0.5*(erf(m*sqrt(n)/(2*z)*sqrt(y)/sqrt(2)*(1 - (1 - f)*v^2)/(1 - (1 - f)*v)) - erf(m*sqrt(n)/(2*z)*sqrt(y)/sqrt(2)*(f + (1 - f)*v^2)/(f + (1 - f)*v)))*pchisq(y, n)
+        }
+        Pr.bal.new.chisq.0 = function(y){
+          0.5*(erf(m*sqrt(n)/(2*z)*sqrt(y)/sqrt(2)*(1 + v)) - erf(m*sqrt(n)/(2*z)*sqrt(y)/sqrt(2)*v))*pchisq(y, n)
+        }
+      Ratio.new.chisq[i] = integrate(Pr.bal.new.chisq, lower = 0, upper = Inf)$value/integrate(Pr.bal.new.chisq.0, lower = 0, upper = Inf)$value
+    }
+    lines(Ratio.new.chisq ~ F.values, lty=2, lwd=2, col=transparentColor('dodgerblue', opacity=0.8))  
+   # Simulations
+   points(R.new ~ F, pch=21, col=COL8[1], bg = transparentColor(COL8[1], opacity=0.0), cex=1.5, data=Exp_lgEffectData)
+   points(R.new ~ F, pch=21, col=COL8[1], bg = transparentColor(COL8[1], opacity=0.5), cex=1.5, data=Chi_lgEffectData)
+   if(add_low_n) {
+     points(R.new ~ F, pch=21, col=COL8[2], bg = transparentColor(COL8[2], opacity=0.5), cex=1.5, data=Chi_lgEffectData_low_n)
+  }
+  # axes
+   axis(1, las=1)
+   axis(2, las=1)
+   # Plot labels etc.
+   proportionalLabel(0.05,  1.075,   expression(paste("B")), cex=1.5, adj=c(0.5, 0.5), xpd=NA)
+   proportionalLabel(0.5,  1.1,   expression(paste(italic(R[new]), sep="")), cex=2, adj=c(0.5, 0.5), xpd=NA)
+   proportionalLabel(-0.25,  0.5,  expression(paste("Relative fraction (", italic(R[bal]), ")")), cex=1.5, adj=c(0.5, 0.5), xpd=NA, srt=90)
+   proportionalLabel( 0.5,  -0.25,  expression(paste("Inbreeding coefficient (", italic(F), ")")), cex=1.5, adj=c(0.5, 0.5), xpd=NA) 
+         legend(
+             x       =  usr[2],
+             y       =  usr[4],
+             legend  =  c(
+                          expression(paste(1-italic(F))),
+                          expression(paste("Approx.")),
+                          expression(paste("Numerical"))),
+             lty     =  c(1,1,2),
+             lwd     =  c(2,2,2),
+             col     =  c(transparentColor(COL8[1], opacity=1), 
+                          transparentColor(COL8[1], opacity=0.5),  
+                          transparentColor('dodgerblue', opacity=0.8)),
+             cex     =  1.25,
+             xjust   =  1,
+             yjust   =  1,
+             bty     =  'n',
+             border  =  NA
+            )
+  if(add_low_n) {
+       legend(
+             x       =  usr[2],
+             y       =  usr[4]*0.7,
+             legend  =  c(
+                          expression(paste("Chi (", italic(n)==50,")")),
+                          substitute(paste("Chi (",italic(n)==nn, ")"), list(nn=low_n)),
+                          expression(paste("Exponential"))),
+             pch     =  21,
+             col     =  c(COL8[1], COL8[2], COL8[1]),
+             pt.bg   =  c(transparentColor(COL8[1], opacity=0.5),
+                          transparentColor(COL8[2], opacity=0.5),
+                          transparentColor(COL8[1], opacity=0)),
+             cex     =  1.25,
+             xjust   =  1,
+             yjust   =  1,
+             bty     =  'n',
+             border  =  NA
+            )
+ 
+  }
+  else{
+       legend(
+             x       =  usr[2],
+             y       =  usr[4]*0.7,
+             legend  =  c(
+                          expression(paste("Chi")),
+                          expression(paste("Exponential"))),
+             pch     =  21,
+             col     =  COL8[1],
+             pt.bg   =  c(transparentColor(COL8[1], opacity=0.5), transparentColor(COL8[1], opacity=0)),
+             cex     =  1.25,
+             xjust   =  1,
+             yjust   =  1,
+             bty     =  'n',
+             border  =  NA
+            )
+ 
+  }  
+
+
+   # Panel (C) -- R_adapt
+   plot(NA, axes=FALSE, type='n', main='',xlim = c(0,1), ylim = c(0,1), ylab='', xlab='', cex.lab=1.2)
+   usr  <-  par('usr')
+   rect(usr[1], usr[3], usr[2], usr[4], col='white', border=NA)
+   plotGrid(lineCol='grey80')
+   box()
+   # Approximations
+   lines(1 - F.values ~ F.values, lwd = 2, col=COL8[1])
+   lines(Rbal_largex_fav(F = F.values, h = 1/2) ~ F.values, lty=1, lwd=2, col=transparentColor(COL8[1], opacity=0.5))
+   # Numerical Results
+  Ratio.ben.chisq = vector()
+    m=0.1
+  for(i in 1:length(F.values)){
+    f = F.values[i]
+    Pr.pos.chisq = function(y){
+      0.5*(1 - erf(m*sqrt(n)/(2*z)*sqrt(y)/sqrt(2)*(1 - (1 - f)*v^2)/(1 - (1 - f)*v)))*pchisq(y, n)
+    }
+    Pr.ben.chisq = function(y){
+      0.5*(1 - erf(m*sqrt(n)/(2*z)*sqrt(y)/sqrt(2)*(f + (1 - f)*v^2)/(f + (1 - f)*v)))*pchisq(y, n)
+    }
+    Pr.pos.chisq.0 = function(y){
+      0.5*(1 - erf(m*sqrt(n)/(2*z)*sqrt(y)/sqrt(2)*(1 + v)))*pchisq(y, n)
+    }
+    Pr.ben.chisq.0 = function(y){
+      0.5*(1 - erf(m*sqrt(n)/(2*z)*sqrt(y)/sqrt(2)*v))*pchisq(y, n)
+    }
+    Ratio.ben.chisq[i] = (1 - integrate(Pr.pos.chisq, lower = 0, upper = Inf)$value/integrate(Pr.ben.chisq, lower = 0, upper = Inf)$value)/(1 - integrate(Pr.pos.chisq.0, lower = 0, upper = Inf)$value/integrate(Pr.ben.chisq.0, lower = 0, upper = Inf)$value)
+  }
+  lines(Ratio.ben.chisq ~ F.values, lty=2, lwd=2, col=transparentColor('dodgerblue', opacity=0.8)) 
+   # Simulations
+   points(R.adapt ~ F, pch=21, col=COL8[1], bg = transparentColor(COL8[1], opacity=0), cex=1.5, data=Exp_lgEffectData)
+   points(R.adapt ~ F, pch=21, col=COL8[1], bg = transparentColor(COL8[1], opacity=0.5), cex=1.5, data=Chi_lgEffectData)
+   if(add_low_n) {
+     points(R.adapt ~ F, pch=21, col=COL8[2], bg = transparentColor(COL8[2], opacity=0.5), cex=1.5, data=Chi_lgEffectData_low_n)
+   }
+   # axes
+   axis(1, las=1)
+   axis(2, las=1)
+   # Plot labels etc.
+   proportionalLabel(0.05,  1.075,   expression(paste("C")), cex=1.5, adj=c(0.5, 0.5), xpd=NA)
+   proportionalLabel( 0.5,  -0.25,  expression(paste("Inbreeding coefficient (", italic(F), ")")), cex=1.5, adj=c(0.5, 0.5), xpd=NA)      
+   proportionalLabel(-0.25,  0.5,  expression(paste("Relative fraction (", italic(R[bal]), ")")), cex=1.5, adj=c(0.5, 0.5), xpd=NA, srt=90)
+   proportionalLabel(0.5,  1.1,   expression(paste(italic(R[adapt.]), sep="")), cex=2, adj=c(0.5, 0.5), xpd=NA)
+ 
+   # Panel (D) -- R_estab
+   plot(NA, axes=FALSE, type='n', main='',xlim = c(0,1), ylim = c(0,1), ylab='', xlab='', cex.lab=1.2)
+   usr  <-  par('usr')
+   rect(usr[1], usr[3], usr[2], usr[4], col='white', border=NA)
+   plotGrid(lineCol='grey80')
+   box()
+   # Approximations
+   lines(1 - F.values ~ F.values, lwd = 2, col=COL8[1])
+   lines(Restab_nu(F = F.values, v = 1/2) ~ F.values, lty=1, lwd=2, col=transparentColor(COL8[1], opacity=0.5)) 
+   # Numerical Results
+  Ratio.estab.chisq = vector()
+    for(i in 1:length(F.values)){
+      f = F.values[i]
+       Pr.fix.chisq = function(y){
+         z^2*m*sqrt(n)/(2*z)*sqrt(y)/n*(sqrt(2/pi)*(1 + f)*exp(-(m*sqrt(n)/(2*z)*sqrt(y))^2/2*(3 + f)^2/(2 + 2*f)^2) - m*sqrt(n)/(2*z)*sqrt(y)*(1 + 3*f)/2*(1 - erf(m*sqrt(n)/(2*z)*sqrt(y)*(3 + f)/(2*sqrt(2)*(1 + f)))))*pchisq(y, n)
+       }
+       
+       Pr.est.chisq = function(y){
+         z^2*m*sqrt(n)/(2*z)*sqrt(y)/n*(sqrt(2/pi)*(1 + f)*exp(-(m*sqrt(n)/(2*z)*sqrt(y))^2/2*(1 + 3*f)^2/(2 + 2*f)^2) - m*sqrt(n)/(2*z)*sqrt(y)*(1 + 3*f)/2*(1 - erf(m*sqrt(n)/(2*z)*sqrt(y)*(1 + 3*f)/(2*sqrt(2)*(1 + f)))))*pchisq(y, n)
+       }
+       Pr.fix.chisq.0 = function(y){
+         z^2*m*sqrt(n)/(2*z)*sqrt(y)/n*(sqrt(2/pi)*exp(-(m*sqrt(n)/(2*z)*sqrt(y))^2*9/8) - m*sqrt(n)/(2*z)*sqrt(y)/2*(1 - erf(m*sqrt(n)/(2*z)*sqrt(y)*3/(2*sqrt(2)))))*pchisq(y, n)
+       }
+       
+       Pr.est.chisq.0 = function(y){
+         z^2*m*sqrt(n)/(2*z)*sqrt(y)/n*(sqrt(2/pi)*exp(-(m*sqrt(n)/(2*z)*sqrt(y))^2/8) - m*sqrt(n)/(2*z)*sqrt(y)/2*(1 - erf(m*sqrt(n)/(2*z)*sqrt(y)/(2*sqrt(2)))))*pchisq(y, n)
+       }
+       
+       Ratio.estab.chisq[i] = (1 - integrate(Pr.fix.chisq, lower = 0, upper = Inf)$value/integrate(Pr.est.chisq, lower = 0, upper = Inf)$value)/(1 - integrate(Pr.fix.chisq.0, lower = 0, upper = Inf)$value/integrate(Pr.est.chisq.0, lower = 0, upper = Inf)$value)
+   }
+   lines(Ratio.estab.chisq ~ F.values, lty=2, lwd=2, col=transparentColor('dodgerblue', opacity=0.8))  
+   # Simulations
+   points(R.est ~ F, pch=21, col=COL8[1], bg = transparentColor(COL8[1], opacity=0), cex=1.5, data=Exp_lgEffectData)
+   points(R.est ~ F, pch=21, col=COL8[1], bg = transparentColor(COL8[1], opacity=0.5), cex=1.5, data=Chi_lgEffectData)
+   if(add_low_n) {
+     points(R.est ~ F, pch=21, col=COL8[2], bg = transparentColor(COL8[2], opacity=0.5), cex=1.5, data=Chi_lgEffectData_low_n)
+   }
+   # axes
+   axis(1, las=1)
+   axis(2, las=1, labels=NA)
+   # Plot labels etc.
+   proportionalLabel(0.05,  1.075,   expression(paste("D")), cex=1.5, adj=c(0.5, 0.5), xpd=NA)
+   proportionalLabel( 0.5,  -0.25,  expression(paste("Inbreeding coefficient (", italic(F), ")")), cex=1.5, adj=c(0.5, 0.5), xpd=NA)       
+   proportionalLabel(0.5,  1.1,   expression(paste(italic(R[estab.]), sep="")), cex=2, adj=c(0.5, 0.5), xpd=NA)
+ 
+#%%
+} 
+ 
 ######################################
 ## Supp. Figs for lower trait dimensionality
 

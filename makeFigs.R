@@ -93,6 +93,13 @@ toPdf(BivariateSelFig_EstabMuts(datafile = "./out/BivariateSelFigSims_EstabMuts_
 embed_fonts(figPath(name = "BivariateSelFigFGM_xAvg5_z1_h0.5_Estab.pdf"))
 
 
+# Fig. 7 -- Comparing exp vs. scaled-chi distributions of x 
+toPdf(RelBalancing_large_xDist_Fig(),
+  figPath(name = "RelBalancing_large_xDist_Fig.pdf"),
+  width = 10, height = 9 
+)
+embed_fonts(figPath(name = "RelBalancing_large_xDist_Fig.pdf"))
+
 
 ########################
 # Supplementary Figures
@@ -118,7 +125,7 @@ toPdf(RelBalancingFig(favouredMuts = FALSE),
 embed_fonts(figPath(name = "RelBalancingFig-AllMuts.pdf"))
 
 
-# Fig. S3 - Balancing selection summary figure for new mutations
+# Fig. S3 -- Balancing selection summary figure for new mutations
 # (A) Pr(Bal | x) ~ mutation size
 # (B) R_new ~ F for both small- and variable-mutation size limits
 toPdf(BalSelNewMutationsFig(xAvg = 5, inclSmallMuts = TRUE),
@@ -127,7 +134,15 @@ toPdf(BalSelNewMutationsFig(xAvg = 5, inclSmallMuts = TRUE),
 )
 embed_fonts(figPath(name = "BalSelNewMutationsFig-wSmall.pdf"))
 
-# Fig. S4 -- Balancing selection for adaptive mutations
+
+# Fig. S4 -- Effect of lower-n on Pr(Bal | x) ~ mutation size for new mutations.
+toPdf(PrBalSelNewMutations_lower_n_Fig(),
+  figPath(name = "PrBalSelNewMutations_lower_n_Fig.pdf"),
+  width = 6, height = 6
+)
+
+
+# Fig. S5 -- Effect of phenotypic dominance on R_bal for adaptive mutations
 # (A) R_adapt ~ F for small-x
 # (B) R_adapt ~ F for variable-x
 toPdf(RelBalancingFavored_wSmall_Fig(xAvg = 5, favouredMuts = TRUE),
@@ -136,14 +151,14 @@ toPdf(RelBalancingFavored_wSmall_Fig(xAvg = 5, favouredMuts = TRUE),
 )
 
 
-# Fig. S5 -- Bivariate distribution of selection coeffs. for new mutations (classical parameterization)
+# Fig. S6 -- Bivariate distribution of selection coeffs. for new mutations (classical parameterization)
 toPdf(BivariateSelFig(xAvg = 5, n = 50, z = 1, h = 1 / 2, reps = 10^4, coeffs = "CLASSIC", xLim = c(-0.1, 0.2), yLim = c(-0.05, 0.6)),
   figPath(name = "BivariateSelFigClassic_xAvg5_z1.0.pdf"),
   width = 15, height = 10
 )
 embed_fonts(figPath(name = "BivariateSelFigClassic_xAvg5_z1.0.pdf"))
 
-# Fig. S6 -- Bivariate distribution of selection coeffs. for new mutations (FGM parameterization)
+# Fig. S7 -- Bivariate distribution of selection coeffs. for new mutations (FGM parameterization)
 # 			 with recessive phenotypic effects (v = 0.1)
 toPdf(BivariateSelFig(xAvg = 5, n = 50, z = 1, h = 1 / 10, reps = 10^4, coeffs = "FGM", yLim = c(-0.1, 0.15), xLim = NA),
   figPath(name = "BivariateSelFigFGM_xAvg5_z1_h0.1.pdf"),
@@ -151,7 +166,8 @@ toPdf(BivariateSelFig(xAvg = 5, n = 50, z = 1, h = 1 / 10, reps = 10^4, coeffs =
 )
 embed_fonts(figPath(name = "BivariateSelFigFGM_xAvg5_z1_h0.1.pdf"))
 
-# Fig. S7 -- R_bal ~ F summary figure for both small-x and variable-x limits
+
+# Fig. S8 -- R_bal ~ F summary figure for both small-x and variable-x limits
 toPdf(RelBalancing_SummaryFig(Ne = 10^6, sim.reps = 10^6),
   figPath(name = "RelBalancing_SummaryFig.pdf"),
   width = 7, height = 7
@@ -159,14 +175,15 @@ toPdf(RelBalancing_SummaryFig(Ne = 10^6, sim.reps = 10^6),
 # embed_fonts(figPath(name='RelBalancing_SummaryFig.pdf'))
 
 
-# Fig. S8 -- Bivariate distribution of selection coefficients for established mutations (Classic param.)
+# Fig. S9 -- Bivariate distribution of selection coefficients for established mutations (Classic param.)
 toPdf(BivariateSelFig_EstabMuts(datafile = "./out/BivariateSelFigSims_EstabMuts_xAvg5_Ne1e+05_n50_z1_h0.5_reps10000.csv", coeffs = "CLASSIC", xLim = c(-0.01, 0.2), yLim = c(-0.1, 0.8)),
   figPath(name = "BivariateSelFigClassic_xAvg5_z1_h0.5_Estab.pdf"),
   width = 12, height = 8
 )
 embed_fonts(figPath(name = "BivariateSelFigClassic_xAvg5_z1_h0.5_Estab.pdf"))
 
-# Fig. S9 -- Summary of effects underlying the decline with inbreeding
+
+# Fig. S10 -- Summary of effects underlying the decline with inbreeding
 # 			 of balancing selection among established relative to new adaptive
 # 			 mutations (variable-x)
 toPdf(Enrichment_EstabMutsFig(xAvg = 5),
@@ -176,18 +193,68 @@ toPdf(Enrichment_EstabMutsFig(xAvg = 5),
 embed_fonts(figPath(name = "Enrichment_Estab_FavMuts_Fig_xAvg5_z1_h0.5_Estab.pdf"))
 
 
+# Fig. S11 -- Comparison of R_bal for lower-n simulations against high-n appproximations
+toPdf(RelBalancing_lower_n_Fig(xAvg = 5),
+  figPath(name = "RelBalancing_Lower_n_Fig.pdf"),
+  width = 12, height = 5
+)
+
+
+# Fig. S12 -- Illustration of FGM for n = 2 traits (Moonrise over flatland figure)
+toPdf(Fisher_2D_ExploreFig(z = 0.05, reps = 5 * 10^4),
+  figPath(name = "Fisher_2D_ExploreFig_z0.05.pdf"),
+  width = 15, height = 10
+)
+embed_fonts(figPath(name = "Fisher_2D_ExploreFig_z0.05.pdf"))
+
+
+# Fig. S13 -- Efect of variable dominance using v ~ Beta(a,b)
+# Weakly skewed Beta distributions of v
+toPdf(RelBalancing_BetaDom_Fig(sumAB = 10),
+  figPath(name = "RelBalancing_BetaDom_Fig.pdf"),
+  width = 11, height = 12
+)
+
+
+# Fig. S14 -- Efect of variable dominance using v ~ Beta(a,b)
+# Strongly skewed Beta distributions of v
+toPdf(RelBalancing_BetaDom_Fig(sumAB = 2, hymax = 5),
+  figPath(name = "RelBalancing_BetaDom_Fig_Skewed.pdf"),
+  width = 11, height = 12
+)
+
+
+# Fig. S15 -- Comparison of exp vs. scaled-chi distributions of x
+# including low-n (n = 3) for chi distribution
+toPdf(RelBalancing_large_xDist_Fig(low_n=3),
+  figPath(name = "RelBalancing_large_xDist_Fig_n3.pdf"),
+  width = 10, height = 9 
+)
+embed_fonts(figPath(name = "RelBalancing_large_xDist_Fig_n3.pdf"))
+
+
+# Fig. S16 -- Expanded comparison of exp vs. scaled-chi distributions of x 
+# for large-n, showing R_new, R_adapt, R_estab
+toPdf(RelBalancing_xDist_Fig(),
+  figPath(name = "RelBalancing_xDist_Fig.pdf"),
+  width = 11, height = 8 
+)
+
 
 
 ########################
 # Exploratory figures
 ########################
 
-# Note: the remainder of this file are functions to generate
-# 		exploratory plots that didn't end up in the final
-# 		paper. Some may be deprecated.
+# Note: the remainder of this file contains functions to generate
+# 		  exploratory plots that didn't end up in the final paper. 
+# 		  Some may be deprecated, or require running simulations
+#       first.
 
-# Relative proportion of parameter space resulting in
-# balancing selection for:
+
+## Relative proportion of parameter space resulting in
+## balancing selection for:
+
 # (1) new mutations
 toPdf(RelBalancingFig(favouredMuts = FALSE),
   figPath(name = "RelBalancingFig-AllMuts.pdf"),
@@ -210,7 +277,7 @@ toPdf(RelBalancingEstablishedFig(),
 embed_fonts(figPath(name = "RelBalancingFig-EstMuts.pdf"))
 
 
-# Kimura-Ohta invasion plot for arbitrary selection strength
+## Kimura-Ohta invasion plot for arbitrary selection strength
 toPdf(KimuraOhta_InvPlot(),
   figPath(name = "KimuraOhta_InvPlot.pdf"),
   width = 10, height = 7
@@ -228,8 +295,8 @@ embed_fonts(figPath(name = "relMutSizeMaxRBal.pdf"))
 
 #######################
 # FGM 2D Visualizations
-
 # "Moonrise over flatland"
+
 toPdf(Fisher_2D_ExploreFig(z = 0.01, reps = 5 * 10^4),
   figPath(name = "Fisher_2D_ExploreFig_z0.01.pdf"),
   width = 15, height = 10
@@ -291,7 +358,7 @@ toPdf(Fisher_2D_ExploreFig(z = 0.75, reps = 5 * 10^4),
 embed_fonts(figPath(name = "Fisher_2D_ExploreFig_z0.75.pdf"))
 
 
-# Moonrise over flatland for larger initial displacements.
+# "Moonrise over flatland" for larger initial displacements.
 # Things get weird.
 toPdf(Fisher_2D_ExploreFig(z = 0.75, reps = 5 * 10^4),
   figPath(name = "Fisher_2D_ExploreFig_z0.75.pdf"),
@@ -419,52 +486,6 @@ toPdf(RelBalancing_VariableDom_Fig(),
   width = 12, height = 8
 )
 
-# Variable dominance using v ~ Beta(a,)
-# Less strongly skewed Beta distributions of v
-toPdf(RelBalancing_BetaDom_Fig(sumAB = 10),
-  figPath(name = "RelBalancing_BetaDom_Fig.pdf"),
-  width = 11, height = 12
-)
-
-# More strongly skewed Beta distributions of v
-toPdf(RelBalancing_BetaDom_Fig(sumAB = 2, hymax = 5),
-  figPath(name = "RelBalancing_BetaDom_Fig_Skewed.pdf"),
-  width = 11, height = 12
-)
-
-
-
-#%%
-rm(list = ls())
-source("./R/functions-figures.R")
-source("./R/functions-FGM-Simulations.R")
-RelBalancing_xDist_Fig(histmax = 3.5)
-
-#%%
-# Comparing exp vs. chi distributions of x 
-# Less strongly skewed Beta distributions of v
-toPdf(RelBalancing_xDist_Fig(hymax = 3.5),
-  figPath(name = "RelBalancing_xDist_Fig.pdf"),
-  width = 11, height = 12
-)
-
-#%%
-
-
-
-# Comparison of lower-dimension simulations against high-n appproximations
-toPdf(RelBalancing_lower_n_Fig(xAvg = 5),
-  figPath(name = "RelBalancing_Lower_n_Fig.pdf"),
-  width = 12, height = 5
-)
-
-
-# Probability of balancing selection ~ mutation size, showing lower-n
-toPdf(PrBalSelNewMutations_lower_n_Fig(),
-  figPath(name = "PrBalSelNewMutations_lower_n_Fig.pdf"),
-  width = 6, height = 6
-)
-
 
 # Figure for ppt presentation.
 toPdf(RelBalancing_SummaryFig_presentation(xAvg = 5, Ne = 10^6, sim.reps = 10^7),
@@ -477,7 +498,7 @@ embed_fonts(figPath(name = "RelBalancingSummary_Pres_Fig.pdf"))
 
 
 
-# Playing with looking at the distribution of seleciton coefficients and dominance. Meh.
+# Playing with visualizing the distributions of seleciton coefficients and dominance. Meh.
 # toPdf(SelectionAndDominanceFig(xAvg=2, n = 50, z = 1, h = 1/2, reps = 10^4, estMuts = FALSE, datafile = "./out/BivariateSelFigSims_EstabMuts_xAvg2_Ne1e+05_n50_z1_h0.5_reps10000.csv"),
 # 			figPath(name='SelectionAndDominanceFig_z1_h0.5_New.pdf'), width=12, height=8)
 # embed_fonts(figPath(name='SelectionAndDominanceFig_z1_h0.5_New'))

@@ -5,7 +5,7 @@
 #'
 #'  NOTES: Run this file, either from terminal using Rscript,
 #' 		  or interactively in R. This should create simulation
-#' 		  data needed for making figures for the mansucript.
+#' 		  data needed for making figures in the mansucript.
 #'
 
 ###############
@@ -70,18 +70,13 @@ relBalancingMutSize_variable_x_EstabMuts_Sims(xAvg = 5, Ne = 10^5, n = 2, z = 1,
 
 # Generate simulation data for comparison of variable dominance with v ~ beta(),
 # as well as different distributions of mutational effects
-
-
 #%%
 
-rm(list = ls())
-source("./R/functions-FGM-Simulations.R")
-
 # Exponential vs. chi distribution supp fig.
-R_bal_xDist_vBeta_Sims(x.dist = list(dist = "exp", xAvg = 0.25), Ne = 10^5, n = 50, z = 1, vAvg = 1/2, variableDom = TRUE, sumAB = 10, estab.reps = 10^4, writeFile = TRUE)
-R_bal_xDist_vBeta_Sims(x.dist = list(dist = "exp", xAvg = 2.5),  Ne = 10^5, n = 50, z = 1, vAvg = 1/2, variableDom = TRUE, sumAB = 10, estab.reps = 10^4, writeFile = TRUE)
-R_bal_xDist_vBeta_Sims(x.dist = list(dist = "chi",    m = 0.01), Ne = 10^5, n = 50, z = 1, vAvg = 1/2, variableDom = TRUE, sumAB = 10, estab.reps = 10^4, writeFile = TRUE)
-R_bal_xDist_vBeta_Sims(x.dist = list(dist = "chi",    m = 0.1),  Ne = 10^5, n = 50, z = 1, vAvg = 1/2, variableDom = TRUE, sumAB = 10, estab.reps = 10^4, writeFile = TRUE)
+R_bal_xDist_vBeta_Sims(x.dist = list(dist = "exp", xAvg = 0.25), Ne = 10^5, n = 50, z = 1, vAvg = 1/2, variableDom = FALSE, sumAB = 10, estab.reps = 10^4, writeFile = TRUE)
+R_bal_xDist_vBeta_Sims(x.dist = list(dist = "exp", xAvg = 2.5),  Ne = 10^5, n = 50, z = 1, vAvg = 1/2, variableDom = FALSE, sumAB = 10, estab.reps = 10^4, writeFile = TRUE)
+R_bal_xDist_vBeta_Sims(x.dist = list(dist = "chi",    m = 0.01), Ne = 10^5, n = 100, z = 1, vAvg = 1/2, variableDom = FALSE, sumAB = 10, estab.reps = 10^4, writeFile = TRUE)
+R_bal_xDist_vBeta_Sims(x.dist = list(dist = "chi",    m = 0.1),  Ne = 10^5, n = 50, z = 1, vAvg = 1/2, variableDom = FALSE, sumAB = 10, estab.reps = 10^4, writeFile = TRUE)
 
 #%%
 
@@ -94,5 +89,18 @@ R_bal_xDist_vBeta_Sims(x.dist = list(dist = "exp", xAvg = 5), Ne = 10^5, n = 50,
 R_bal_xDist_vBeta_Sims(x.dist = list(dist = "exp", xAvg = 5), Ne = 10^5, n = 50, z = 1, vAvg = 1/4, variableDom = TRUE, sumAB = 2, estab.reps = 10^4, writeFile = TRUE)
 R_bal_xDist_vBeta_Sims(x.dist = list(dist = "exp", xAvg = 5), Ne = 10^5, n = 50, z = 1, vAvg = 1/2, variableDom = TRUE, sumAB = 2, estab.reps = 10^4, writeFile = TRUE)
 R_bal_xDist_vBeta_Sims(x.dist = list(dist = "exp", xAvg = 5), Ne = 10^5, n = 50, z = 1, vAvg = 3/4, variableDom = TRUE, sumAB = 2, estab.reps = 10^4, writeFile = TRUE)
+
+#%%
+
+# SAME, but with lower values of n = 3
+# Exponential vs. chi distribution supp fig.
+#R_bal_xDist_vBeta_Sims(x.dist = list(dist = "exp", xAvg = 0.25), Ne = 10^5, n = 3, z = 1, vAvg = 1/2, variableDom = FALSE, sumAB = 10, estab.reps = 10^4, writeFile = TRUE)
+#R_bal_xDist_vBeta_Sims(x.dist = list(dist = "exp", xAvg = 2.5),  Ne = 10^5, n = 3, z = 1, vAvg = 1/2, variableDom = FALSE, sumAB = 10, estab.reps = 10^4, writeFile = TRUE)
+#R_bal_xDist_vBeta_Sims(x.dist = list(dist = "chi",    m = 0.18), Ne = 10^5, n = 3, z = 1, vAvg = 1/2, variableDom = FALSE, sumAB = 10, estab.reps = 10^4, writeFile = TRUE)
+#R_bal_xDist_vBeta_Sims(x.dist = list(dist = "chi",    m = 1.8),  Ne = 10^5, n = 3, z = 1, vAvg = 1/2, variableDom = FALSE, sumAB = 10, estab.reps = 10^4, writeFile = TRUE)
+R_bal_xDist_vBeta_Sims(x.dist = list(dist = "chi",    m = 0.281), Ne = 10^5, n = 2, z = 1, vAvg = 1/2, variableDom = FALSE, sumAB = 10, estab.reps = 10^4, writeFile = TRUE)
+R_bal_xDist_vBeta_Sims(x.dist = list(dist = "chi",    m = 2.81),  Ne = 10^5, n = 2, z = 1, vAvg = 1/2, variableDom = FALSE, sumAB = 10, estab.reps = 10^4, writeFile = TRUE)
+#R_bal_xDist_vBeta_Sims(x.dist = list(dist = "chi",    m = 0.4415), Ne = 10^5, n = 1, z = 1, vAvg = 1/2, variableDom = FALSE, sumAB = 10, estab.reps = 10^4, writeFile = TRUE)
+#R_bal_xDist_vBeta_Sims(x.dist = list(dist = "chi",    m = 4.415),  Ne = 10^5, n = 1, z = 1, vAvg = 1/2, variableDom = FALSE, sumAB = 10, estab.reps = 10^4, writeFile = TRUE)
 
 #%%
