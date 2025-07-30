@@ -1,19 +1,20 @@
-# Effects of inbreeding on the probability of balancing selection: Insights from Fisher’s geometric model 
+# Effects of inbreeding on the probability of balancing selection: Insights from Fisher's geometric model 
 
 ## Overview
 
-This is the GitHub repository for a theoretical population genetics research project with working title "*Effects of inbreeding on the probability of balancing selection: Insights from Fisher’s geometric model*" (doi to be provided after acceptance). Here you can find all of the computer code necessary to reproduce the simulations and main figures presented in the published paper and appendices. The most current Version of Record is archived on Zenodo here: [![DOI](https://zenodo.org/badge/535606024.svg)](https://doi.org/10.5281/zenodo.14000423). 
+This is the GitHub repository for a theoretical population genetics research project with working title "*Effects of inbreeding on the probability of balancing selection: Insights from Fisher's geometric model*" (doi: [10.1093/genetics/iyaf128](https://doi.org/10.1093/genetics/iyaf128)). Here you can find all of the computer code necessary to reproduce the simulations and main figures presented in the published paper and appendices. The most current Version of Record is archived on Zenodo here: [![DOI](https://zenodo.org/badge/535606024.svg)](https://doi.org/10.5281/zenodo.14000423). 
 
 
 ## Abstract
 
-Balancing selection is a potentially important factor in the maintenance of genetic variation for fitness and the genetic basis of inbreeding depression. Classic population genetics theory predicts that inbreeding restricts the range of conditions leading to balancing selection. For example, in models of heterozygote advantage, the classic theory shows that inbreeding reduces the parameter conditions for balancing selection by a factor of $1 – F$, where $F$ is Wright’s inbreeding coefficient. However, without a model for the distribution of fitness effects of mutations or genotypes, this classic theory tells us little about the actual probability that new or segregating mutations meet criteria for balancing selection. Here, we develop an extension of Fisher’s geometric model for nonrandomly mating populations and explore how inbreeding affects the probability of balancing selection by heterozygote advantage. Accounting for the distribution of fitness effects among new mutations, adaptive mutations, and established mutations, we find that the prevalence of balancing selection is consistently, and often substantially, below the $1 – F$ baseline implied by classic theory. The reduction is consistently greater for established mutations relative to new adaptive mutations, which strongly reinforces the idea that balanced genetic polymorphisms are far more likely to occur in outbred than inbred species.
+Balancing selection is a potentially important factor in the maintenance of genetic variation for fitness and, alongside recessive deleterious mutations, the genetic basis of inbreeding depression. Classic population genetics theory predicts that inbreeding restricts the range of conditions leading to balancing selection. For example, in models of heterozygote advantage, the classic theory shows that inbreeding reduces the parameter conditions for balancing selection by a factor of $1 - F$, where $F$ is Wright's inbreeding coefficient. However, without a model for the distribution of fitness effects of mutations or genotypes, this classic theory tells us little about the actual probability that new or segregating mutations meet criteria for balancing selection. Here, we develop an extension of Fisher's geometric model with which we explore how inbreeding affects the probability of balancing selection due to heterozygote advantage and its contribution to genetic variance for fitness. When taking the distribution of fitness effects among new, adaptive, and established mutations into account, we find that the prevalence of balancing selection is consistently, and often substantially, below the $1 - F$ baseline implied by classic theory provided that most mutations have phenotypic effects that are small. The reduction is consistently greater for established mutations relative to adaptive mutations, which reinforces the idea that balanced genetic polymorphisms are far more likely to occur in outbred than inbred species. We discuss the implications of our results for studies of genetic variation for fitness and genome scans for signals of balancing selection.
 
 
 
 ## Citing information
 
-*Citation info will be provided after the resulting article has passed through peer review and been accepted for publication*:
+Olito, C. and T. Connallon. 2025. Effects of inbreeding on balancing selection: insights
+from Fisher's geometric model. *Genetics* iyaf128. doi: [10.1093/genetics/iyaf128](https://doi.org/10.1093/genetics/iyaf128). 
 
 
 ##  Instructions
